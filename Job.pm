@@ -42,12 +42,29 @@ sub _init {
     return; 
 }
 
+# job info 
+sub info { 
+    my ( $self ) = @_; 
+
+    printf "ID       > %s\n", $self->get_id; 
+    printf "Name     > %s\n", $self->get_name;  
+    printf "Queue    > %s\n", $self->get_queue; 
+    printf "Nodes    > %s\n", $self->get_nodes; 
+    printf "Walltime > %s\n", $self->get_walltime; 
+    printf "State    > %s\n", $self->get_state; 
+    printf "Init_dir > %s\n", $self->get_init_dir; 
+    
+    return; 
+}
+
 # job deletion 
 sub delete { 
     my ( $self ) = @_; 
     
+    $self->info; 
+    
     # confirmation 
-    printf "=> qdel: delete job %s? ", $self->get_id;  
+    printf "\n=> qdel: delete job %s? ", $self->get_id;  
     chomp ( my $answer = <STDIN> );  
 
     # job deletion with qdel 

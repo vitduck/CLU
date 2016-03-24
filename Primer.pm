@@ -16,7 +16,7 @@ sub _init {
     # primer info 
     my @primer = qw/bootstrap tree.dat/; 
 
-    # search inheritence chain for _init
+    # search inheritence chain for _init() 
     $self->SUPER::_init($id); 
 
     # read content of init_dir
@@ -34,6 +34,7 @@ sub _init {
     }
 
     # current dir 
+    $self->{cur_dir} = 'none'; 
     if ( exists $self->{tree} ) { 
         $self->{cur_dir} = join '/', $self->{init_dir}, read_tree($self->{tree}) 
     }   
@@ -41,11 +42,23 @@ sub _init {
     return; 
 }
 
+# job info 
+sub info { 
+    my ( $self ) = @_; 
+
+    # search inheritence chain for info() 
+    $self->SUPER::info; 
+
+    printf "Cur_dir  > %s\n", $self->get_cur_dir;
+
+    return; 
+}
+
 # overiding delete
 sub delete { 
     my ( $self ) = @_; 
 
-    # search inheritence chain for delete 
+    # search inheritence chain for delete() 
     $self->SUPER::delete; 
 
     # clean up the rest 
