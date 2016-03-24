@@ -38,7 +38,7 @@ sub _init {
         my ( $id, $user ) = (split)[0,1]; 
         
         # strip the hostname from job id 
-        $id =~ s/(^\d+)(.*)$/$1/;  
+        #$id =~ s/(^\d+)(.*)$/$1/;  
 
         $self->{$id} = $user; 
     }
@@ -49,10 +49,17 @@ sub _init {
 # get job by a user 
 sub get_job_list { 
     my ( $self, $user ) = @_;  
+    my @jobs = (); 
     
-    my @list = grep { $self->{$_} eq $user } keys %$self;  
+    # return jobs belonging to specific user 
+    if ( $user ) { 
+        @jobs = grep { $self->{$_} eq $user } keys %$self;  
+    # returns all jobs 
+    } else { 
+        @jobs = keys %$self; 
+    }
 
-    return sort @list; 
+    return sort @jobs; 
 }
 
 1; 

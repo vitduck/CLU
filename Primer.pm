@@ -34,7 +34,6 @@ sub _init {
     }
 
     # current dir 
-    $self->{cur_dir} = 'none'; 
     if ( exists $self->{tree} ) { 
         $self->{cur_dir} = join '/', $self->{init_dir}, read_tree($self->{tree}) 
     }   
@@ -49,7 +48,7 @@ sub info {
     # search inheritence chain for info() 
     $self->SUPER::info; 
 
-    printf "Cur_dir  > %s\n", $self->get_cur_dir;
+    eval { printf "Cur_dir  > %s\n", $self->get_cur_dir };
 
     return; 
 }
@@ -62,8 +61,8 @@ sub delete {
     $self->SUPER::delete; 
 
     # clean up the rest 
-    if ( $self->get_bootstrap ) { rmtree $self->get_bootstrap }  
-    if ( $self->get_tree )      { unlink $self->get_tree }  
+    eval { rmtree $self->get_bootstrap }; 
+    eval { unlink $self->get_tree }; 
 
     return; 
 }
@@ -71,6 +70,9 @@ sub delete {
 # bootstrap calculation
 sub reset { 
     my ( $self ) = @_; 
+
+    # display job information 
+    $self->info(); 
 
     # short-circuit 
     if ( $self->get_state eq 'Q' ) { return } 
@@ -82,8 +84,7 @@ sub reset {
     my $outcar = join '/', $self->get_cur_dir, 'OUTCAR';  
 
     # confirmation 
-    printf "=> Current directory: %s\n", $current; 
-    printf "=> Reset %s? ", $self->get_id; 
+    printf "\n=> Reset %s? ", $self->get_id; 
     chomp ( my $answer = <STDIN> ); 
 
     # delete OUTCAR

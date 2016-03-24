@@ -46,8 +46,10 @@ sub _init {
 sub info { 
     my ( $self ) = @_; 
 
+    printf "\n"; 
     printf "ID       > %s\n", $self->get_id; 
     printf "Name     > %s\n", $self->get_name;  
+    printf "Owner    > %s\n", $self->get_owner;  
     printf "Queue    > %s\n", $self->get_queue; 
     printf "Nodes    > %s\n", $self->get_nodes; 
     printf "Walltime > %s\n", $self->get_walltime; 
@@ -61,7 +63,8 @@ sub info {
 sub delete { 
     my ( $self ) = @_; 
     
-    $self->info; 
+    # display job information 
+    $self->info();  
     
     # confirmation 
     printf "\n=> qdel: delete job %s? ", $self->get_id;  
