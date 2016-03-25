@@ -35,7 +35,18 @@ sub _init {
         if ( /queue = (.*)/i )                  { $self->{queue}    = $1 } 
         if ( /resource_list.nodes = (.*)/i )    { $self->{nodes}    = $1 } 
         if ( /resource_list.walltime = (.*)/i ) { $self->{walltime} = $1 }  
-        if ( /init_work_dir = (.*)/i )          { $self->{init_dir} = $1 } 
+        if ( /init_work_dir = (.*)/i )          { 
+            # single line 
+            $self->{init_dir} = $1;  
+            # broken line 
+            chomp ( my $broken = <$qstat> );  
+            if ( $broken ) { 
+                # trim leading white space 
+                $broken =~ s/^\s+//; 
+                # join broken part 
+                $self->{init_dir} .= $broken; 
+            }
+        } 
     }
     $qstat->close; 
 
