@@ -53,7 +53,6 @@ Apply operation all user's JOB_IDs
 # default optional arguments 
 my $help = 0; 
 my $mode = ''; 
-my @jobs = (); 
 
 # extract id from argument list
 my @ids  = grep $_ !~ /^-+/, @ARGV; 
@@ -71,14 +70,10 @@ GetOptions(
 ) or pod2usage(-verbose => 1); 
 
 # help message 
-if ( $help || @ids == 0 ) { pod2usage(-verbose => 99, -section => \@usages) }
+if ( $help || @ids == 0 || $mode eq '' ) { pod2usage(-verbose => 99, -section => \@usages) }
 
 # constructing object 
-@jobs = map Primer->new($_), @ids; 
-
-switch ( $mode ) { 
-    case 'info'   { map $_->info  , @jobs }  
-    case 'delete' { map $_->delete, @jobs }
-    case 'reset'  { map $_->reset , @jobs }
-    else          { pod2usage(-verbose => 99, -section => \@usages) }
-} 
+for my $id ( @ids ) { 
+    my $job = Primer->new($id);  
+    $job->$mode; 
+}
