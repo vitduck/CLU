@@ -2,6 +2,7 @@ package Primer;
 
 use strict; 
 use warnings; 
+use File::Find; 
 use File::Path qw/rmtree/; 
 use IO::Dir; 
 use IO::File; 
@@ -19,25 +20,43 @@ sub _init {
     # search inheritence chain for _init() 
     $self->SUPER::_init($id); 
 
-    # read content of init_dir
-    my $dirfh = IO::Dir->new($self->{init_dir});  
-    if ( $dirfh ) { 
-        for my $file ( $dirfh->read ) { 
-            # primer match 
-            if ( grep $file eq $_, @primer ) { 
-                # remove the extension
-                ( my $key = $file ) =~ s/\..*$//; 
-                $self->{$key} = join '/', $self->{init_dir}, $file;  
-            }
-        }
-        $dirfh->close; 
+    # addition info 
+    $self->set_bootstrap;  
+    $self->set_cur_dir;  
+
+    return; 
+}
+
+# bootstrap 
+sub set_bootstrap { 
+    my ( $self ) = @_; 
+    
+    $self->{bootstrap} = '';  
+
+    if ( $self->{owner} eq $ENV{USER} ) { 
+        ( $self->{bootstrap} ) = grep { -d and /bootstrap/ } glob "$self->{init_dir}/*"; 
     }
 
-    # current dir 
-    if ( exists $self->{tree} ) { 
-        $self->{cur_dir} = join '/', $self->{init_dir}, read_tree($self->{tree}) 
-    }   
+    return; 
+}
+
+# current directory 
+sub set_cur_dir { 
+    my ( $self ) = @_;  
+    my %current = (); 
     
+    # hash of file => last modified time 
+    $self->{cur_dir} = ''; 
+
+    if ( $self->{owner} eq $ENV{USER} ) { 
+        # sort key based on modified time
+        find(sub { $current{$File::Find::name} = -M if /OUTCAR/ }, $self->{init_dir}); 
+        $self->{cur_dir} = (sort { $current{$a} <=> $current{$b} } keys %current)[0];
+
+        # trim the init_dir from cur_dir
+        $self->{cur_dir} =~ s/$self->{init_dir}\/(.*)\/OUTCAR/$1/; 
+    }
+
     return; 
 }
 
@@ -48,7 +67,7 @@ sub info {
     # search inheritence chain for info() 
     $self->SUPER::info; 
 
-    eval { printf "Cur_dir  > %s\n", $self->get_cur_dir };
+    if ( $self->get_cur_dir) {  printf "Cur_dir  > %s\n", $self->get_cur_dir } 
 
     return; 
 }
@@ -61,8 +80,7 @@ sub delete {
     $self->SUPER::delete; 
 
     # clean up the rest 
-    eval { rmtree $self->get_bootstrap }; 
-    eval { unlink $self->get_tree }; 
+    if ( $self->get_bootstrap ) { rmtree $self->get_bootstrap }  
 
     return; 
 }
@@ -77,11 +95,8 @@ sub reset {
     # short-circuit 
     if ( $self->get_state eq 'Q' ) { return } 
 
-    # shorten curdir 
-    (my $current = $self->get_cur_dir) =~ s/$ENV{HOME}/~/; 
-
     # OUTCAR 
-    my $outcar = join '/', $self->get_cur_dir, 'OUTCAR';  
+    my $outcar = join '/', $self->get_init_dir, $self->get_cur_dir, 'OUTCAR';  
 
     # confirmation 
     printf "\n=> Reset %s? ", $self->get_id; 
@@ -91,32 +106,6 @@ sub reset {
     if ( $answer =~ /^y/i and -f $outcar ) { unlink $outcar } 
 
     return; 
-}
-
-# current directory 
-sub read_tree { 
-    my ( $tree ) = @_;  
-    
-    my $level = 0; 
-    my @dirs  = (); 
-    
-    my $fh    = IO::File->new($tree, 'r'); 
-    while ( <$fh> ) { 
-        # skip the top node +
-        if ( /\+/ ) { next }     
-
-        # depth 
-        $level = grep /\|/, split; 
-
-        # directory 
-        if ( /_(.+?)( \[\*\])?$/ ) { $dirs[$level] = $1 } 
-
-        # current 
-        if ( /\*/ ) { last }
-    }
-    $fh->close; 
-    
-    return join('/',  @dirs[0..$level]);  
 }
 
 1; 
