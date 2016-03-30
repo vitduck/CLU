@@ -35,15 +35,21 @@ sub _init {
         if ( /$ENV{HOSTNAME}:|Job ID|Elap|^-+/ ) { next }
 
         # hash initialiazation 
-        my ( $id, $user ) = (split)[0,1]; 
+        my ( $id, $user, $elap ) = (split)[0,1,-1]; 
         
         # strip the hostname from job id 
         #$id =~ s/(^\d+)(.*)$/$1/;  
 
-        $self->{$id} = $user; 
+        $self->{$id} = { 'user' => $user, 'elaptime' => $elap }; 
     }
     
     return; 
+}
+
+sub get_elaptime { 
+    my ( $self, $id ) = @_;     
+
+    return $self->{$id}{elaptime}; 
 }
 
 # get job by a user 
@@ -53,7 +59,7 @@ sub get_job_list {
     
     # return jobs belonging to specific user 
     if ( $user ) { 
-        @jobs = grep { $self->{$_} eq $user } keys %$self;  
+        @jobs = grep { $self->{$_}{user} eq $user } keys %$self;  
     # returns all jobs 
     } else { 
         @jobs = keys %$self; 

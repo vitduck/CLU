@@ -5,6 +5,8 @@ use warnings;
 use Carp qw/croak/; 
 use IO::Pipe; 
 
+use Queue; 
+
 # constructor
 sub new { 
     my ( $class, $id ) = @_; 
@@ -50,6 +52,10 @@ sub _init {
     }
     $qstat->close; 
 
+    # elap time 
+    my $queue = Queue->new();  
+    $self->{elaptime} = $queue->get_elaptime($id);  
+
     return; 
 }
 
@@ -64,6 +70,7 @@ sub info {
     printf "Queue    > %s\n", $self->get_queue; 
     printf "Nodes    > %s\n", $self->get_nodes; 
     printf "Walltime > %s\n", $self->get_walltime; 
+    printf "Elaptime > %s\n", $self->get_elaptime; 
     printf "State    > %s\n", $self->get_state; 
     printf "Init_dir > %s\n", $self->get_init_dir; 
     
