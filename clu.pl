@@ -1,14 +1,16 @@
 #!/usr/bin/env perl 
 
+use 5.010; 
 use strict; 
 use warnings; 
-use Carp qw/croak/; 
-use Getopt::Long; 
-use Pod::Usage; 
-use Switch; 
 
-use Queue; 
-use Primer; 
+use autodie; 
+use Getopt::Long; 
+use IO::Pipe; 
+use Pod::Usage; 
+use Switch;  
+
+use Job; 
 
 # POD 
 my @usages = qw( NAME SYSNOPSIS OPTIONS );  
@@ -16,11 +18,11 @@ my @usages = qw( NAME SYSNOPSIS OPTIONS );
 # POD 
 =head1 NAME 
 
-dixie.pl (Flatline) -- PBS job manager 
+clu.pl -- PBS job manager 
 
 =head1 SYNOPSIS
 
-dixie.pl [-h] [-i] [-d] [-r] <JOB_ID>
+clu.pl [-h] [-i] [-d] [-r] <JOB_ID>
 
 =head1 OPTIONS
 
@@ -64,16 +66,22 @@ GetOptions(
     'd'  => sub { $mode = 'delete' }, 
     'r'  => sub { $mode = 'reset' }, 
     'a'  => sub { 
-        my $queue = Queue->new();  
-        @ids = $queue->get_job_list($ENV{USER}); 
+        @ids = (); 
+        my $qstat = IO::Pipe->new();
+        $qstat->reader("qstat -a"); 
+        while ( <$qstat> ) { 
+            if ( /$ENV{USER}/ ) { 
+                push @ids, (split)[0]; 
+            }
+        } 
     }, 
 ) or pod2usage(-verbose => 1); 
 
 # help message 
 if ( $help || @ids == 0 || $mode eq '' ) { pod2usage(-verbose => 99, -section => \@usages) }
 
-# constructing object 
+# I am CLU 
 for my $id ( @ids ) { 
-    my $job = Primer->new($id);  
+    my $job = Job->new('id' => $id);  
     $job->$mode; 
 }
