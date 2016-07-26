@@ -3,72 +3,64 @@ package Qstat;
 use 5.010; 
 
 use autodie; 
+use File::Find; 
 use IO::Pipe; 
 use Moose::Role;  
 use namespace::autoclean; 
 
-sub _build_qstatf { 
+sub _parse_qstat_f { 
     my ( $self ) = @_; 
 
-    my $info = {}; 
+    my $info     = {}; 
+    my %mod_time = ();  
 
     # parse the output of 
     my $id    = $self->id; 
     my $qstat = IO::Pipe->new(); 
     $qstat->reader("qstat -f $id"); 
 
-    # regex table
-    my %regex = ( 
-        name     => qr/job_name = (.*)/i, 
-        owner    => qr/job_owner = (.*)@/i, 
-        server   => qr/server = (.*)/i, 
-        state    => qr/job_state = (Q|R|C|E)/i, 
-        queue    => qr/queue = (.*)/i, 
-        nodes    => qr/resource_list.nodes = (.*)/i, 
-        walltime => qr/resource_list.walltime = (.*)/i, 
-    ); 
+    # http://www.effectiveperlprogramming.com/2011/05/use-for-instead-of-given/
+    while ( <$qstat> ) {  
+        for ( $_ ) { 
+            when ( /job_name = (.*)/i                ) { $info->{name}     = $1 } 
+            when ( /job_owner = (.*)@/i              ) { $info->{owner}    = $1 }
+            when ( /server = (.*)/i                  ) { $info->{server}   = $1 } 
+            when ( /job_state = (Q|R|C|E)/i          ) { $info->{state}    = $1 } 
+            when ( /queue = (.*)/i                   ) { $info->{queue}    = $1 } 
+            when ( /resource_list.nodes = (.*)/i     ) { $info->{nodes}    = $1 } 
+            when ( /resource_list.walltime = (.*)/i  ) { $info->{walltime} = $1 } 
+            when ( /resources_used.walltime = (.*)/i ) { $info->{elapsed}  = $1 } 
+            # special case for init_work_dir 
+            when ( /init_work_dir = (.*)/i           ) { 
+                # single line 
+                $info ->{init} = $1;  
 
-    # iterate over regrex 
-    while ( <$qstat> ) { 
-        for my $attr ( keys %regex ) {  
-            # interpolate the regex 
-            if ( /$regex{$attr}/ ) { 
-                $info->{$attr} = $1; 
-                last; 
-            }
-        } 
-        # special handle for init_dir 
-        if ( /init_work_dir = (.*)/i )          { 
-            # single line 
-            $info ->{init} = $1;  
-            # broken line 
-            chomp ( my $broken = <$qstat> );  
-            if ( $broken ) { 
+                # for broken line
                 # trim leading white space 
+                chomp ( my $broken = <$qstat> );  
                 $broken =~ s/^\s+//; 
-                # join broken part 
                 $info->{init} .= $broken; 
             }
-        } 
-    } 
+        }
+    }
+
+    # set bootstrap if calculation has started 
+    ( $info->{bootstrap} ) = grep { -d and /bootstrap/ } glob "$info->{init}/*";
+    $info->{bootstrap} //= ''; 
+    
+    # recursively find modified time of all OUTCAR in directory 
+    # sort and extract the last modified one 
+    find( sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, $info->{init});
+    $info->{latest} = (sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time)[0]; 
+
+    # trim 'OUTCAR' from filename 
+    if ( $info->{latest} ) { 
+        $info->{latest} =~ s/$info->{init}\/(.*)\/OUTCAR/$1/;  
+    } else {  
+        $info->{latest} = ''; 
+    }
 
     return $info; 
 } 
-
-sub _build_qstata { 
-    my ( $self ) = @_; 
-    
-    my $id    = $self->id; 
-    my $qstat = IO::Pipe->new(); 
-    $qstat->reader("qstat -a"); 
-
-    while ( <$qstat> ) { 
-        # skip blank line 
-        if ( /^\s+$/ ) { next } 
-        if ( /$ENV{HOSTNAME}:|Job ID|Elap|^-+/ ) { next }
-        
-        if ( /^$id/ ) { return  (split)[-1] }  
-    } 
-}
 
 1;

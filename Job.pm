@@ -6,13 +6,13 @@ use autodie;
 use File::Path qw/rmtree/; 
 use Moose; 
 use namespace::autoclean; 
+use Term::ANSIColor;
 
-with 'Qstat', 'User';  
+# roles 
+with 'Qstat'; 
 
-my @attributes  = qw/id name owner server state 
-                    queue nodes walltime elapsed 
-                    init current
-                    /; 
+my @attributes = 
+qw/name owner server state queue nodes walltime elapsed init latest bootstrap/; 
 
 has id => ( 
     is       => 'ro', 
@@ -20,50 +20,30 @@ has id => (
     required => 1, 
 ); 
 
-has qstat => ( 
-    traits  => ['Hash'],
-    is      => 'ro', 
-    isa     => 'HashRef[Str]', 
-    lazy    => 1, 
-
-    builder => '_build_qstatf', 
-
-    # currying delegation
-    handles => { 
-        map { $_ => [ get => $_ ] } 
-        qw/name owner server state queue nodes walltime init/
-    }, 
-); 
-
-has elapsed => ( 
-    is      => 'ro', 
-    isa     => 'Str', 
-    lazy    => 1, 
-    builder => '_build_qstata', 
-); 
-
-has bootstrap => ( 
-    is      => 'ro', 
-    isa     => 'Str', 
-    lazy    => 1, 
-    builder => '_build_bootstrap', 
-); 
-
-has current => ( 
-    is      => 'ro', 
-    isa     => 'Str', 
-    lazy    => 1, 
-    builder => '_build_current', 
+# for currying delegation 
+has _qstat => ( 
+    traits   => ['Hash'],
+    is       => 'ro', 
+    isa      => 'HashRef[Str]', 
+    lazy     => 1, 
+    builder  => '_parse_qstat_f', 
+    init_arg => undef, 
+    handles => { map { $_ => [ get => $_ ] } @attributes }, 
 ); 
 
 sub info { 
     my ( $self ) = @_; 
-    
-    printf "\n"; 
+
+    my $head = $self->state eq 'R' ? 
+    colored($self->id, 'bold underline blue') : 
+    colored($self->id, 'bold underline red'); 
+
+    printf "\n%s\n", $head;  
     for my $attr ( @attributes ) { 
-        printf "%-10s> %s\n", ucfirst($attr), $self->$attr;  
-    }
-      
+        if ( $attr eq 'bootstrap' ) { next }  
+        if ( $self->$attr ) { printf "%-10s> %s\n", ucfirst($attr), $self->$attr }; 
+    } 
+
     return; 
 }
 
@@ -83,7 +63,7 @@ sub delete {
         system 'qdel', $self->id;  
 
         # delete bootstrap dir 
-        rmtree $self->bootstrap; 
+        if ( $self->bootstrap ) { rmtree $self->bootstrap }  
     }  
 
     return; 
@@ -97,15 +77,12 @@ sub reset {
     # short-circuit 
     if ( $self->state eq 'Q' ) { return } 
 
-    # only reset if inside bootstrap 
-    if ( $self->current ne 'bootstrap' ) { return } 
-
     # confirmation  
     printf "\n=> Reset %s? ", $self->id; 
     chomp ( my $answer = <STDIN> ); 
 
     # delete OUTAR  
-    if ( $answer =~ /^y/i ) { unlink join '/', $self->init, $self->current, 'OUTCAR' }
+    if ( $answer =~ /^y/i ) { unlink join '/', $self->init, $self->latest, 'OUTCAR' }
     
     return; 
 } 
