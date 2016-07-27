@@ -10,7 +10,7 @@ use IO::Pipe;
 use Pod::Usage; 
 use Switch;  
 
-use Job; 
+use PBS::Job; 
 
 # POD 
 my @usages = qw( NAME SYSNOPSIS OPTIONS );  
@@ -82,6 +82,6 @@ if ( $help || @ids == 0 || $mode eq '' ) { pod2usage(-verbose => 99, -section =>
 
 # I am CLU 
 for my $id ( @ids ) { 
-    my $job = Job->new('id' => $id);  
+    my $job = PBS::Job->new('id' => $id);  
     $job->$mode; 
 }
