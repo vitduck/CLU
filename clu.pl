@@ -8,7 +8,6 @@ use autodie;
 use Getopt::Long; 
 use IO::Pipe; 
 use Pod::Usage; 
-use Switch;  
 
 use PBS::Job; 
 
