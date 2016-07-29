@@ -3,16 +3,121 @@ package PBS::Qstat;
 use 5.010; 
 
 use autodie; 
-use File::Find; 
 use IO::Pipe; 
 use Moose::Role;  
 use namespace::autoclean; 
+use Term::ANSIColor; 
 
-sub _parse_qstat_f { 
+has qstat => ( 
+    is       => 'ro', 
+    isa      => 'HashRef[Str]', 
+    lazy     => 1, 
+    builder  => '_qstat_f', 
+); 
+
+has name => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my  ( $self ) = @_;         
+
+        return $self->qstat->{name}; 
+    }
+); 
+
+has owner => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my ( $self ) = @_; 
+
+        return $self->qstat->{'owner'};  
+    }, 
+); 
+
+has server => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my ( $self ) = @_; 
+
+        return $self->qstat->{'server'};  
+    }, 
+); 
+
+has state => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my ( $self ) = @_; 
+
+        return $self->qstat->{'state'};  
+    } 
+); 
+
+has queue => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my ( $self ) = @_; 
+
+        return $self->qstat->{'queue'} 
+    }, 
+); 
+
+has nodes => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my ( $self) = @_;  
+
+        return $self->qstat->{'nodes'}; 
+    }, 
+); 
+
+has walltime => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my ( $self ) = @_; 
+
+        return $self->qstat->{'walltime'}; 
+    }, 
+); 
+
+has elapsed => ( 
+    is        => 'ro', 
+    isa       => 'Str', 
+    lazy      => 1, 
+    default   => sub { 
+        my ( $self ) = @_; 
+
+        return $self->qstat->{'elapsed'} //= '';  
+    }, 
+); 
+
+has init => ( 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub { 
+        my ( $self ) = @_; 
+
+        return $self->qstat->{'init'}; 
+    }, 
+); 
+
+sub _qstat_f { 
     my ( $self ) = @_; 
 
     my $info     = {}; 
-    my %mod_time = ();  
 
     # parse the output of 
     my $id    = $self->id; 
@@ -44,23 +149,16 @@ sub _parse_qstat_f {
         }
     }
 
-    # set bootstrap if calculation has started 
-    ( $info->{bootstrap} ) = grep { -d and /bootstrap/ } glob "$info->{init}/*";
-    $info->{bootstrap} //= ''; 
-    
-    # recursively find modified time of all OUTCAR in directory 
-    # sort and extract the last modified one 
-    find( sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, $info->{init});
-    $info->{latest} = (sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time)[0]; 
-
-    # trim 'OUTCAR' from filename 
-    if ( $info->{latest} ) { 
-        $info->{latest} =~ s/$info->{init}\/(.*)\/OUTCAR/$1/;  
-    } else {  
-        $info->{latest} = ''; 
-    }
-
     return $info; 
 } 
+
+sub delete { 
+    my ( $self ) = @_; 
+
+    # kill job 
+    system 'qdel', $self->id;  
+    
+    return; 
+}
 
 1;

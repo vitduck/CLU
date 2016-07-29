@@ -66,18 +66,17 @@ GetOptions(
     'r'  => sub { $mode = 'reset' }, 
     'a'  => sub { 
         @ids = (); 
+
         my $qstat = IO::Pipe->new();
         $qstat->reader("qstat -a"); 
         while ( <$qstat> ) { 
-            if ( /$ENV{USER}/ ) { 
-                push @ids, (split)[0]; 
-            }
+            if ( /$ENV{USER}/ ) { push @ids, (split)[0] }
         } 
     }, 
 ) or pod2usage(-verbose => 1); 
 
 # help message 
-if ( $help || @ids == 0 || $mode eq '' ) { pod2usage(-verbose => 99, -section => \@usages) }
+if ( $help or @ids == 0 or $mode eq '' ) { pod2usage(-verbose => 99, -section => \@usages) }
 
 # I am CLU 
 for my $id ( @ids ) { 
