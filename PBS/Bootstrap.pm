@@ -1,20 +1,27 @@
 package PBS::Bootstrap; 
 
+# pragma 
 use autodie; 
+
+# core 
 use File::Path qw(rmtree); 
+
+# cpan 
 use Moose::Role;  
 use namespace::autoclean; 
 
-# roles
+# features 
+use experimental qw(signatures); 
+
+# <roles> 
 with qw(PBS::Qstat); 
 
+# <attributes>
 has 'bootstrap' => ( 
     'is'      => 'ro', 
     'isa'     => 'Str', 
     'lazy'    => 1,   
-    'default' => sub { 
-        my ( $self ) = @_; 
-        
+    'default' => sub ( $self ) { 
         my $init_dir = $self->init; 
         
         if ( $self->owner eq $ENV{USER} ) { 
@@ -25,6 +32,7 @@ has 'bootstrap' => (
     },    
 ); 
 
+# <methods> 
 # remove bootstrap directory after job deletion
 after delete => sub { 
     my ( $self ) = @_; 

@@ -1,128 +1,98 @@
 package PBS::Qstat; 
 
+# pragma
 use autodie; 
+
+# core
 use IO::Pipe; 
-use Moose::Role;  
-use namespace::autoclean; 
 use Term::ANSIColor; 
 
+# cpan
+use Moose::Role;  
+use namespace::autoclean; 
+
+# features
+use experimental qw(signatures); 
+
+# <attributes > 
 has qstat => ( 
-    is       => 'ro', 
-    isa      => 'HashRef[Str]', 
-    lazy     => 1, 
-    builder  => '_qstat_f', 
+    is      => 'ro', 
+    isa     => 'HashRef[Str]', 
+    lazy    => 1, 
+    builder => '_qstat_f', 
 ); 
 
 has name => ( 
-    is       => 'ro', 
-    isa      => 'Str', 
-    lazy     => 1, 
-    default  => sub { 
-        my  ( $self ) = @_;         
-
-        return $self->qstat->{name}; 
-    }
+    is      => 'ro', 
+    isa     => 'Str', 
+    lazy    => 1, 
+    default => sub ( $self ) { return $self->qstat->{name} }
 ); 
 
 has owner => ( 
-    is       => 'ro', 
-    isa      => 'Str', 
-    lazy     => 1, 
-    default  => sub { 
-        my ( $self ) = @_; 
-
-        return $self->qstat->{'owner'};  
-    }, 
+    is      => 'ro', 
+    isa     => 'Str', 
+    lazy    => 1, 
+    default => sub ( $self ) { return $self->qstat->{'owner'} } 
 ); 
 
 has server => ( 
-    is       => 'ro', 
-    isa      => 'Str', 
-    lazy     => 1, 
-    default  => sub { 
-        my ( $self ) = @_; 
-
-        return $self->qstat->{'server'};  
-    }, 
+    is      => 'ro', 
+    isa     => 'Str', 
+    lazy    => 1, 
+    default => sub ( $self ) { return $self->qstat->{'server'} } 
 ); 
 
 has state => ( 
-    is       => 'ro', 
-    isa      => 'Str', 
-    lazy     => 1, 
-    default  => sub { 
-        my ( $self ) = @_; 
-
-        return $self->qstat->{'state'};  
-    } 
+    is      => 'ro', 
+    isa     => 'Str', 
+    lazy    => 1, 
+    default => sub ( $self ) { return $self->qstat->{'state'} } 
 ); 
 
 has queue => ( 
-    is       => 'ro', 
-    isa      => 'Str', 
-    lazy     => 1, 
-    default  => sub { 
-        my ( $self ) = @_; 
-
-        return $self->qstat->{'queue'} 
-    }, 
+    is      => 'ro', 
+    isa     => 'Str', 
+    lazy    => 1, 
+    default => sub ( $self ) { return $self->qstat->{'queue'} }
 ); 
 
 has nodes => ( 
-    is       => 'ro', 
-    isa      => 'Str', 
-    lazy     => 1, 
-    default  => sub { 
-        my ( $self) = @_;  
-
-        return $self->qstat->{'nodes'}; 
-    }, 
+    is      => 'ro', 
+    isa     => 'Str', 
+    lazy    => 1, 
+    default => sub ( $self ) { return $self->qstat->{'nodes'} } 
 ); 
 
 has walltime => ( 
-    is       => 'ro', 
-    isa      => 'Str', 
-    lazy     => 1, 
-    default  => sub { 
-        my ( $self ) = @_; 
-
-        return $self->qstat->{'walltime'}; 
-    }, 
+    is      => 'ro', 
+    isa     => 'Str', 
+    lazy    => 1, 
+    default => sub ( $self ) { return $self->qstat->{'walltime'} }  
 ); 
 
 has elapsed => ( 
-    is        => 'ro', 
-    isa       => 'Str', 
-    lazy      => 1, 
-    default   => sub { 
-        my ( $self ) = @_; 
-
-        return $self->qstat->{'elapsed'} //= '';  
-    }, 
+    is       => 'ro', 
+    isa      => 'Str', 
+    lazy     => 1, 
+    default  => sub ( $self ) { return $self->qstat->{'elapsed'} //= '' } 
 ); 
 
 has init => ( 
     is       => 'ro', 
     isa      => 'Str', 
     lazy     => 1, 
-    default  => sub { 
-        my ( $self ) = @_; 
-
-        return $self->qstat->{'init'}; 
-    }, 
+    default  => sub ( $self ) { return $self->qstat->{'init'} } 
 ); 
 
-sub _qstat_f { 
-    my ( $self ) = @_; 
-
-    my $info     = {}; 
-
-    # parse the output of 
+# <methods> 
+# parse the output of 'qstat -f JOB_ID'
+sub _qstat_f ( $self ) { 
     my $id    = $self->id; 
+    my $info  = {}; 
     my $qstat = IO::Pipe->new(); 
+    
     $qstat->reader("qstat -f $id"); 
-
-    # http://www.effectiveperlprogramming.com/2011/05/use-for-instead-of-given/
     while ( <$qstat> ) {  
         if    ( /job_name = (.*)/i                ) { $info->{name}     = $1 } 
         elsif ( /job_owner = (.*)@/i              ) { $info->{owner}    = $1 }
@@ -148,13 +118,7 @@ sub _qstat_f {
     return $info; 
 } 
 
-sub delete { 
-    my ( $self ) = @_; 
-
-    # kill job 
-    system 'qdel', $self->id;  
+# kill job 
+sub delete ( $self ) { system 'qdel', $self->id } 
     
-    return; 
-}
-
 1;

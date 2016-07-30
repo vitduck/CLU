@@ -1,20 +1,27 @@
 package PBS::Node; 
 
+# pragma
 use autodie; 
+
+# core
 use File::Find;
+
+# cpan 
 use Moose::Role;  
 use namespace::autoclean; 
 
-# roles 
+# features 
+use experimental qw(signatures);  
+
+# <roles> 
 with qw(PBS::Qstat); 
 
+# <attributes>
 has 'node' => ( 
     is      => 'ro', 
     isa     => 'Str', 
     lazy    => 1, 
-    default => sub { 
-        my ( $self ) = @_; 
-
+    default => sub ( $self ) { 
         my %mod_time = (); 
         my $init_dir = $self->init; 
         
@@ -31,13 +38,8 @@ has 'node' => (
     }, 
 ); 
 
-sub reset { 
-    my ( $self ) = @_; 
-
-    # delete latest OUTCAR file 
-    unlink join '/', $self->init, $self->node, 'OUTCAR'; 
-
-    return; 
-} 
+# <methods>
+# reset job by deleting latest OUTCAR  
+sub reset ( $self ) { unlink join '/', $self->init, $self->node, 'OUTCAR' } 
 
 1; 

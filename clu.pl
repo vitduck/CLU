@@ -1,13 +1,16 @@
 #!/usr/bin/env perl 
 
+# pragma 
+use autodie; 
 use strict; 
 use warnings; 
 
-use autodie; 
+# core
 use Getopt::Long; 
 use IO::Pipe; 
 use Pod::Usage; 
 
+# OO
 use PBS::Job; 
 
 # POD 
