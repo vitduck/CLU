@@ -1,7 +1,5 @@
 package PBS::Qstat; 
 
-use 5.010; 
-
 use autodie; 
 use IO::Pipe; 
 use Moose::Role;  
@@ -126,26 +124,24 @@ sub _qstat_f {
 
     # http://www.effectiveperlprogramming.com/2011/05/use-for-instead-of-given/
     while ( <$qstat> ) {  
-        for ( $_ ) { 
-            when ( /job_name = (.*)/i                ) { $info->{name}     = $1 } 
-            when ( /job_owner = (.*)@/i              ) { $info->{owner}    = $1 }
-            when ( /server = (.*)/i                  ) { $info->{server}   = $1 } 
-            when ( /job_state = (Q|R|C|E)/i          ) { $info->{state}    = $1 } 
-            when ( /queue = (.*)/i                   ) { $info->{queue}    = $1 } 
-            when ( /resource_list.nodes = (.*)/i     ) { $info->{nodes}    = $1 } 
-            when ( /resource_list.walltime = (.*)/i  ) { $info->{walltime} = $1 } 
-            when ( /resources_used.walltime = (.*)/i ) { $info->{elapsed}  = $1 } 
-            # special case for init_work_dir 
-            when ( /init_work_dir = (.*)/i           ) { 
-                # single line 
-                $info ->{init} = $1;  
+        if    ( /job_name = (.*)/i                ) { $info->{name}     = $1 } 
+        elsif ( /job_owner = (.*)@/i              ) { $info->{owner}    = $1 }
+        elsif ( /server = (.*)/i                  ) { $info->{server}   = $1 } 
+        elsif ( /job_state = (Q|R|C|E)/i          ) { $info->{state}    = $1 } 
+        elsif ( /queue = (.*)/i                   ) { $info->{queue}    = $1 } 
+        elsif ( /resource_list.nodes = (.*)/i     ) { $info->{nodes}    = $1 } 
+        elsif ( /resource_list.walltime = (.*)/i  ) { $info->{walltime} = $1 } 
+        elsif ( /resources_used.walltime = (.*)/i ) { $info->{elapsed}  = $1 } 
+        # special case for init_work_dir 
+        elsif ( /init_work_dir = (.*)/i           ) { 
+            # single line 
+            $info ->{init} = $1;  
 
-                # for broken line
-                # trim leading white space 
-                chomp ( my $broken = <$qstat> );  
-                $broken =~ s/^\s+//; 
-                $info->{init} .= $broken; 
-            }
+            # for broken line
+            # trim leading white space 
+            chomp ( my $broken = <$qstat> );  
+            $broken =~ s/^\s+//; 
+            $info->{init} .= $broken; 
         }
     }
 

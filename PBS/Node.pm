@@ -1,7 +1,5 @@
 package PBS::Node; 
 
-use 5.010; 
-
 use autodie; 
 use File::Find;
 use Moose::Role;  

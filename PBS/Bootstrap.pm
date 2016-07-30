@@ -1,7 +1,5 @@
 package PBS::Bootstrap; 
 
-use 5.010; 
-
 use autodie; 
 use File::Path qw(rmtree); 
 use Moose::Role;  

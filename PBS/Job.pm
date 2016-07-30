@@ -1,7 +1,5 @@
 package PBS::Job;
 
-use 5.010; 
-
 use autodie; 
 use Moose; 
 use namespace::autoclean; 
@@ -37,9 +35,10 @@ sub info {
 
     # color the header based on job status 
     my $header; 
-    for ( $self->state ) {  
-        when ( /R/ ) { $header = colored($self->id, 'bold underline blue') }
-        when ( /Q/ ) { $header = colored($self->id, 'bold underline red' ) } 
+    if ( $self->state eq 'R' ) { 
+        $header = colored($self->id, 'bold underline blue')
+    } else { 
+        $header = colored($self->id, 'bold underline red' ) 
     } 
 
     # print information from qstat
