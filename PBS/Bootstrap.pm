@@ -18,7 +18,6 @@ has 'bootstrap', (
     is        => 'ro', 
     isa       => 'Str', 
     lazy      => 1,   
-    predicate => 'has_bootstrap', 
     init_arg  => undef, 
 
     default   => sub ( $self ) { 
@@ -35,7 +34,9 @@ has 'bootstrap', (
 # <methods> 
 # remove bootstrap directory after job deletion
 sub clean ( $self ) { 
-    if ( $self->has_bootstrap ) { rmtree $self->bootstrap } 
+    if ( $self->bootstrap ) { 
+        rmtree $self->bootstrap; 
+    } 
 } 
 
 1; 

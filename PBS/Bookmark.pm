@@ -13,12 +13,15 @@ use namespace::autoclean;
 # features 
 use experimental qw(signatures);  
 
+# <roles> 
+with qw(PBS::Qstat); 
+
 # <attributes>
 has 'bookmark', ( 
     is        => 'ro', 
     isa       => 'Str', 
     lazy      => 1, 
-    predicate => 'has_bookmark', 
+    init_arg  => undef, 
 
     default   => sub ( $self ) { 
         my $bookmark; 
@@ -31,13 +34,24 @@ has 'bookmark', (
             $bookmark = (sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time)[0];
             $bookmark =~ s/$init_dir\/(.*)\/OUTCAR/$1/;   
         }  
+
+        return $bookmark; 
     }, 
 ); 
+
+# <modifiers> 
+after 'info' => sub ( $self ) { 
+    if ( $self->bookmark ) { 
+        printf "%-9s> %s\n", ucfirst('bookmark'), $self->bookmark; 
+    } 
+}; 
 
 # <methods>
 # reset job by deleting latest OUTCAR  
 sub reset ( $self ) { 
-    unlink join '/', $self->init, $self->has_bookmark, 'OUTCAR' 
+    if ( $self->bookmark ) { 
+        unlink join '/', $self->init, $self->bookmark, 'OUTCAR'; 
+    }
 } 
 
 1; 
