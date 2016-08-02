@@ -13,15 +13,15 @@ use namespace::autoclean;
 # features 
 use experimental qw(signatures); 
 
-# <roles> 
-with qw(PBS::Qstat); 
-
 # <attributes>
-has 'bootstrap' => ( 
-    'is'      => 'ro', 
-    'isa'     => 'Str', 
-    'lazy'    => 1,   
-    'default' => sub ( $self ) { 
+has 'bootstrap', ( 
+    is        => 'ro', 
+    isa       => 'Str', 
+    lazy      => 1,   
+    predicate => 'has_bootstrap', 
+    init_arg  => undef, 
+
+    default   => sub ( $self ) { 
         my $init_dir = $self->init; 
         
         if ( $self->owner eq $ENV{USER} ) { 
@@ -34,12 +34,8 @@ has 'bootstrap' => (
 
 # <methods> 
 # remove bootstrap directory after job deletion
-after delete => sub { 
-    my ( $self ) = @_; 
-
-    if ( $self->bootstrap ) { rmtree $self->bootstrap } 
-
-    return; 
-};  
+sub clean ( $self ) { 
+    if ( $self->has_bootstrap ) { rmtree $self->bootstrap } 
+} 
 
 1; 
