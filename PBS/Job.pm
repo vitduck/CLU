@@ -13,13 +13,16 @@ use namespace::autoclean;
 # features  
 use experimental qw(signatures);  
 
+# <types> 
+use PBS::Types qw(ID); 
+
 # <roles> 
 with qw(PBS::Qstat PBS::Qdel PBS::Bootstrap PBS::Bookmark); 
 
 # <attributes> 
 has 'id', ( 
     is       => 'ro', 
-    isa      => 'Str', 
+    isa      => ID, 
     required => 1 
 ); 
 
