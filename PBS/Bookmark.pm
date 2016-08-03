@@ -35,7 +35,7 @@ has 'bookmark', (
             $bookmark =~ s/$init_dir\/(.*)\/OUTCAR/$1/;   
         }  
 
-        return $bookmark; 
+        return $bookmark //= '';  
     }, 
 ); 
 

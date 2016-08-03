@@ -21,13 +21,14 @@ has 'bootstrap', (
     init_arg  => undef, 
 
     default   => sub ( $self ) { 
+        my $bootstrap; 
         my $init_dir = $self->init; 
         
         if ( $self->owner eq $ENV{USER} ) { 
-            return ( grep { -d and /bootstrap-\d+/ } glob "$init_dir/*" )[0]; 
-        } else { 
-            return ''; 
+            $bootstrap = ( grep { -d and /bootstrap-\d+/ } glob "$init_dir/*" )[0]; 
         }
+
+        return $bootstrap //= ''; 
     },    
 ); 
 
