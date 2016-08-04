@@ -10,10 +10,15 @@ use namespace::autoclean;
 # features
 use experimental qw(signatures); 
 
+# <roles> 
+with qw(PBS::Prompt); 
+
 # <methods> 
 # kill job 
 sub delete ( $self ) { 
-    system 'qdel', $self->id 
+    if ( $self->prompt('delete') ) {  
+        system 'qdel', $self->id 
+    }
 } 
 
 1; 

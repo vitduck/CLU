@@ -14,7 +14,7 @@ use namespace::autoclean;
 use experimental qw(signatures);  
 
 # <roles> 
-with qw(PBS::Qstat); 
+with qw(PBS::Qstat PBS::Prompt); 
 
 # <attributes>
 has 'bookmark', ( 
@@ -28,11 +28,14 @@ has 'bookmark', (
         my %mod_time = (); 
         my $init_dir = $self->init; 
         
+        # required permission 
         if ( $self->owner eq $ENV{USER} ) { 
             # recursively find modified time of all OUTCAR in directory 
             find( sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, $init_dir );  
             $bookmark = (sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time)[0];
-            $bookmark =~ s/$init_dir\/(.*)\/OUTCAR/$1/;   
+            if ( $bookmark ) { 
+                $bookmark =~ s/$init_dir\/(.*)\/OUTCAR/$1/;   
+            }
         }  
 
         return $bookmark //= '';  
@@ -49,7 +52,7 @@ after 'info' => sub ( $self ) {
 # <methods>
 # reset job by deleting latest OUTCAR  
 sub reset ( $self ) { 
-    if ( $self->bookmark ) { 
+    if ( $self->bookmark and $self->prompt('reset') ) { 
         unlink join '/', $self->init, $self->bookmark, 'OUTCAR'; 
     }
 } 
