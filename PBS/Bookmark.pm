@@ -26,15 +26,15 @@ has 'bookmark', (
     default   => sub ( $self ) { 
         my $bookmark; 
         my %mod_time = (); 
-        my $init_dir = $self->init; 
         
         # required permission 
         if ( $self->owner eq $ENV{USER} ) { 
             # recursively find modified time of all OUTCAR in directory 
-            find( sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, $init_dir );  
-            $bookmark = (sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time)[0];
-            if ( $bookmark ) { 
-                $bookmark =~ s/$init_dir\/(.*)\/OUTCAR/$1/;   
+            find( sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, $self->init );  
+
+            # the latest OUTCAR created 
+            if ( %mod_time ) { 
+                $bookmark = ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
             }
         }  
 
@@ -44,8 +44,9 @@ has 'bookmark', (
 
 # <modifiers> 
 after 'info' => sub ( $self ) { 
+    my $prefix = $self->init; 
     if ( $self->bookmark ) { 
-        printf "%-9s> %s\n", ucfirst('bookmark'), $self->bookmark; 
+        printf "%-9s> %s\n", ucfirst('bookmark'), $self->bookmark =~ s/$prefix\///r;  
     } 
 }; 
 
@@ -53,7 +54,7 @@ after 'info' => sub ( $self ) {
 # reset job by deleting latest OUTCAR  
 sub reset ( $self ) { 
     if ( $self->bookmark and $self->prompt('reset') ) { 
-        unlink join '/', $self->init, $self->bookmark, 'OUTCAR'; 
+        unlink join '/', $self->bookmark, 'OUTCAR'; 
     }
 } 
 

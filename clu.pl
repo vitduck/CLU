@@ -37,6 +37,10 @@ Print the help message and exit.
 
 Show information related to JOB_ID 
 
+=item B<-b> 
+
+Show bookmarked directory 
+
 =item B<-d> 
 
 Delete JOB_ID 
@@ -63,9 +67,10 @@ my @ids  = grep $_ !~ /^-+/, @ARGV;
 # parse optional arguments 
 GetOptions( 
     'h'  => \$help, 
-    'i'  => sub { $mode = 'info' }, 
-    'd'  => sub { $mode = 'delete' }, 
-    'r'  => sub { $mode = 'reset' }, 
+    'i'  => sub { $mode = 'info'          }, 
+    's'  => sub { $mode = 'one_line_info' }, 
+    'd'  => sub { $mode = 'delete'        }, 
+    'r'  => sub { $mode = 'reset'         }, 
     'a'  => sub { 
         @ids = (); 
 
