@@ -31,8 +31,17 @@ before [ qw(reset delete) ] => sub ( $self ) {
     $self->info 
 }; 
 
-after 'delete' => sub ( $self ) { 
+after delete => sub ( $self ) { 
     $self->clean; 
+}; 
+
+# simplify the constructor: ->new(ID) 
+override BUILDARGS => sub ( $class, @args ) { 
+    if ( @args == 1 and ID->check($args[0]) ) { 
+        return { id => $args[0] }
+    } 
+
+    return super; 
 }; 
 
 # <methods> 
