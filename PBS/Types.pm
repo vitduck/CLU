@@ -2,6 +2,7 @@ package PBS::Types;
 
 # pragma
 use autodie; 
+use warnings FATAL => 'all'; 
 
 # cpan
 use MooseX::Types -declare => [ qw(ID) ];   

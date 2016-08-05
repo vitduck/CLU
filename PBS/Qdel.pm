@@ -2,6 +2,7 @@ package PBS::Qdel;
 
 # pragma
 use autodie; 
+use warnings FATAL => 'all'; 
 
 # cpan
 use Moose::Role;  
@@ -16,9 +17,7 @@ with qw(PBS::Prompt);
 # <methods> 
 # kill job 
 sub delete ( $self ) { 
-    if ( $self->prompt('delete') ) {  
-        system 'qdel', $self->id 
-    }
+    if ( $self->prompt('delete') ) { system 'qdel', $self->id  }
 } 
 
 1; 

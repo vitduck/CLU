@@ -2,6 +2,7 @@ package PBS::Bootstrap;
 
 # pragma 
 use autodie; 
+use warnings FATAL => 'all'; 
 
 # core 
 use File::Path qw(rmtree); 
@@ -9,6 +10,7 @@ use File::Path qw(rmtree);
 # cpan 
 use Moose::Role;  
 use namespace::autoclean; 
+use Try::Tiny; 
 
 # features 
 use experimental qw(signatures); 
@@ -21,12 +23,8 @@ has 'bootstrap', (
     init_arg  => undef, 
 
     default   => sub ( $self ) { 
-        my $bootstrap; 
-        my $init_dir = $self->init; 
-        
-        if ( $self->owner eq $ENV{USER} ) { 
-            $bootstrap = ( grep { -d and /bootstrap-\d+/ } glob "$init_dir/*" )[0]; 
-        }
+        # silent the permission error
+        my $bootstrap = try { (grep { -d and /bootstrap-\d+/ } glob "${\$self->init}/*" )[0] }; 
 
         return $bootstrap //= ''; 
     },    
@@ -35,9 +33,7 @@ has 'bootstrap', (
 # <methods> 
 # remove bootstrap directory after job deletion
 sub clean ( $self ) { 
-    if ( $self->bootstrap ) { 
-        rmtree $self->bootstrap; 
-    } 
+    if ( $self->bootstrap ) { rmtree $self->bootstrap };  
 } 
 
 1; 

@@ -2,6 +2,7 @@ package PBS::Job;
 
 # pragma 
 use autodie; 
+use warnings FATAL => 'all'; 
 
 # core 
 use Term::ANSIColor; 
@@ -37,9 +38,7 @@ after delete => sub ( $self ) {
 
 # simplify the constructor: ->new(ID) 
 override BUILDARGS => sub ( $class, @args ) { 
-    if ( @args == 1 and ID->check($args[0]) ) { 
-        return { id => $args[0] }
-    } 
+    if ( @args == 1 and ID->check($args[0]) ) { return { id => $args[0] } } 
 
     return super; 
 }; 

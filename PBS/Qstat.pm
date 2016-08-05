@@ -2,6 +2,7 @@ package PBS::Qstat;
 
 # pragma
 use autodie; 
+use warnings FATAL => 'all'; 
 
 # core
 use IO::Pipe; 
@@ -22,6 +23,7 @@ has 'qstat', (
     is       => 'ro', 
     isa      => 'HashRef[Str]', 
     traits   => ['Hash'],
+    lazy     => 1, 
     init_arg => undef,  
 
     default => sub ( $self ) { 
