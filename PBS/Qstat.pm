@@ -22,7 +22,6 @@ has 'qstat', (
     is       => 'ro', 
     isa      => 'HashRef[Str]', 
     traits   => ['Hash'],
-    lazy     => 1, 
     init_arg => undef,  
 
     default => sub ( $self ) { 
