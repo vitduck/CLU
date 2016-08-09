@@ -10,6 +10,9 @@ use Getopt::Long;
 use IO::Pipe; 
 use Pod::Usage; 
 
+# cpan 
+use Data::Printer; 
+
 # OO
 use PBS::Job; 
 
@@ -27,66 +30,69 @@ clu.pl [-h] [-i] [-d] [-r] <JOB_ID>
 
 =head1 OPTIONS
 
-=over 8
+=over 12
 
-=item B<-h>
+=item B<--help>
 
 Print the help message and exit.
 
-=item B<-i> 
+=item B<--id> 
 
-Show information related to JOB_ID 
+List of Job ID 
 
-=item B<-b> 
+=item B<--delete> 
 
-Show bookmarked directory 
+Delete job
 
-=item B<-d> 
+=item B<--reset> 
 
-Delete JOB_ID 
+Reset bootstraped job
 
-=item B<-r> 
+=item B<--status>
 
-Reset bootstraped JOB_ID
+Status of job (Default) 
 
-=item B<-a>
+=item B<--format> 
 
-Apply operation all user's JOB_IDs 
+Format of status output, such as oneline
 
 =back 
 
 =cut
 
-# default optional arguments 
-my $help = 0; 
-my $mode = ''; 
-
-# extract id from argument list
-my @ids  = grep $_ !~ /^-+/, @ARGV; 
-
 # parse optional arguments 
-GetOptions( 
-    'h'  => \$help, 
-    'i'  => sub { $mode = 'info'          }, 
-    's'  => sub { $mode = 'one_line_info' }, 
-    'd'  => sub { $mode = 'delete'        }, 
-    'r'  => sub { $mode = 'reset'         }, 
-    'a'  => sub { 
-        @ids = (); 
-
-        my $qstat = IO::Pipe->new();
-        $qstat->reader("qstat -a"); 
-        while ( <$qstat> ) { 
-            if ( /$ENV{USER}/ ) { push @ids, (split)[0] }
-        } 
-    }, 
+GetOptions(
+    \ my %option, 
+    'help', 'id=s@{1,}', 'mode=s', 'format=s' 
 ) or pod2usage(-verbose => 1); 
 
 # help message 
-if ( $help or @ids == 0 or $mode eq '' ) { pod2usage(-verbose => 99, -section => \@usages) }
+if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }  
+
+# default behaviors 
+my @ids  = exists $option{id}   ? $option{id}->@* : get_job_id(); 
+my $mode = exists $option{mode} ? $option{mode}   : 'status';   
+
+# status format (for instance, oneline) 
+if ( $mode eq 'status' and exists $option{format} ) { 
+    $mode = join '_', $mode, $option{format} 
+} 
+
+# object constructions 
+my @jobs = map { PBS::Job->new(id => $_) } @ids; 
 
 # I am CLU 
-for my $id ( @ids ) { 
-    my $job = PBS::Job->new('id' => $id);  
-    $job->$mode; 
-}
+for my $job ( @jobs ) { $job->$mode } 
+
+sub get_job_id { 
+    my @ids; 
+
+    my $qstat = IO::Pipe->new();
+    $qstat->reader("qstat -a"); 
+    while ( <$qstat> ) { 
+        my ( $id, $user ) = (split)[0,1]; 
+        if ( /$ENV{USER}/ ) { push @ids, $id }
+    } 
+
+    return @ids; 
+} 

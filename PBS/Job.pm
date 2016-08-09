@@ -56,7 +56,7 @@ has 'bookmark', (
 ); 
 
 # Moose modifiers 
-after info => sub ( $self ) { 
+after status => sub ( $self ) { 
     if ( $self->has_bookmark ) { 
         printf "%-9s=> %s\n", ucfirst('bookmark'), $self->bookmark =~ s/${\$self->init}\///r;  
     } 
@@ -72,7 +72,7 @@ override BUILDARGS => sub ( $class, @args ) {
 # Moose methods
 # delete and clean bootstrap directory 
 sub delete ( $self ) { 
-    $self->info; 
+    $self->status; 
 
     if ( $self->prompt('delete') ) { 
         system 'qdel', $self->id;  
@@ -82,14 +82,14 @@ sub delete ( $self ) {
 
 # reset job by deleting latest OUTCAR  
 sub reset ( $self ) { 
-    $self->info; 
+    $self->status; 
 
     if ( $self->has_bookmark and $self->prompt('reset') ) { unlink join '/', $self->bookmark, 'OUTCAR' }
 } 
 
-sub info_oneline ( $self ) {  
+sub status_oneline ( $self ) {  
     # depending on status of the job, print bookmark or init
-    my $dir = $self->state eq "R" ? 
+    my $dir = $self->has_bootstrap ? 
     $self->bookmark =~ s/$ENV{HOME}/~/r : 
     $self->init     =~ s/$ENV{HOME}/~/r; 
 
