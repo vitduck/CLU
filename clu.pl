@@ -26,33 +26,25 @@ clu.pl -- PBS job manager
 
 =head1 SYNOPSIS
 
-clu.pl [-h] [-i] [-d] [-r] <JOB_ID>
+clu.pl -i JOB_ID -m status -f oneline
 
 =head1 OPTIONS
 
 =over 12
 
-=item B<--help>
+=item B<-h --help>
 
 Print the help message and exit.
 
-=item B<--id> 
+=item B<-i --id> 
 
 List of Job ID 
 
-=item B<--delete> 
+=item B<-m --mode> 
 
-Delete job
+Available mode: status, delete, reset 
 
-=item B<--reset> 
-
-Reset bootstraped job
-
-=item B<--status>
-
-Status of job (Default) 
-
-=item B<--format> 
+=item B<-f --format> 
 
 Format of status output, such as oneline
 
