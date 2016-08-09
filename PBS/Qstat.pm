@@ -71,7 +71,7 @@ sub info ( $self) {
 
     # print information from qstat
     printf "\n%s\n", $header;  
-    for ( @pbs_attrs ) { printf "%-9s> %s\n", ucfirst($_), $self->$_ }
+    for ( @pbs_attrs ) { printf "%-9s=> %s\n", ucfirst($_), $self->$_ }
 }
 
 1;

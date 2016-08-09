@@ -5,6 +5,8 @@ use autodie;
 use warnings FATAL => 'all'; 
 
 # core 
+use File::Find; 
+use File::Path qw(rmtree); 
 use Term::ANSIColor; 
 
 # cpan  
@@ -14,26 +16,50 @@ use namespace::autoclean;
 # features  
 use experimental qw(signatures);  
 
-# <types> 
+# Moose types
 use PBS::Types qw(ID); 
 
-# <roles> 
-with qw(PBS::Qstat PBS::Qdel PBS::Bootstrap PBS::Bookmark); 
+# Moose roles 
+with qw(PBS::Qstat PBS::Prompt); 
 
-# <attributes> 
+# Moose attributes 
 has 'id', ( 
     is       => 'ro', 
     isa      => ID, 
     required => 1 
 ); 
 
-# <modifiers> 
-before [ qw(reset delete) ] => sub ( $self ) { 
-    $self->info 
-}; 
+has 'bootstrap', ( 
+    is        => 'ro', 
+    isa       => 'Str', 
+    predicate => 'has_bootstrap', 
+    lazy      => 1,   
+    init_arg  => undef, 
 
-after delete => sub ( $self ) { 
-    $self->clean; 
+    default   => sub ( $self ) { 
+        return (grep { -d and /bootstrap-\d+/ } glob "${\$self->init}/*" )[0] 
+    },    
+); 
+
+has 'bookmark', ( 
+    is        => 'ro', 
+    isa       => 'Str', 
+    predicate => 'has_bookmark',
+    lazy      => 1, 
+    init_arg  => undef, 
+
+    default   => sub ( $self ) { 
+        my %mod_time = (); 
+        find( sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, $self->init ); 
+        return ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
+    }, 
+); 
+
+# Moose modifiers 
+after info => sub ( $self ) { 
+    if ( $self->has_bookmark ) { 
+        printf "%-9s=> %s\n", ucfirst('bookmark'), $self->bookmark =~ s/${\$self->init}\///r;  
+    } 
 }; 
 
 # simplify the constructor: ->new(ID) 
@@ -43,8 +69,25 @@ override BUILDARGS => sub ( $class, @args ) {
     return super; 
 }; 
 
-# <methods> 
-sub one_line_info ( $self ) {  
+# Moose methods
+# delete and clean bootstrap directory 
+sub delete ( $self ) { 
+    $self->info; 
+
+    if ( $self->prompt('delete') ) { 
+        system 'qdel', $self->id;  
+        if ( $self->has_bootstrap ) { rmtree $self->bootstrap };  
+    }
+} 
+
+# reset job by deleting latest OUTCAR  
+sub reset ( $self ) { 
+    $self->info; 
+
+    if ( $self->has_bookmark and $self->prompt('reset') ) { unlink join '/', $self->bookmark, 'OUTCAR' }
+} 
+
+sub info_oneline ( $self ) {  
     # depending on status of the job, print bookmark or init
     my $dir = $self->state eq "R" ? 
     $self->bookmark =~ s/$ENV{HOME}/~/r : 
@@ -56,8 +99,12 @@ sub one_line_info ( $self ) {
 # parse output of qstatf -> set bootstrap -> set bookmark 
 sub BUILD ( $self, @args ) { 
     $self->qstat;     
-    $self->bootstrap; 
-    $self->bookmark; 
+    # owner of the job is also the user 
+    # who runs the scripts 
+    if ( $self->owner eq $ENV{USER} ) { 
+        $self->bootstrap; 
+        $self->bookmark; 
+    }
 }
 
 # speed-up object construction 
