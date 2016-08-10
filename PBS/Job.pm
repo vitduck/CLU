@@ -98,7 +98,9 @@ sub status_oneline ( $self ) {
 
 # parse output of qstatf -> set bootstrap -> set bookmark 
 sub BUILD ( $self, @args ) { 
-    $self->qstat;     
+    # populate the status of job 
+    $self->qstat_f;     
+
     # owner of the job is also the user 
     # who runs the scripts 
     if ( $self->owner eq $ENV{USER} ) { 

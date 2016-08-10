@@ -19,7 +19,7 @@ use experimental qw(signatures);
 my @pbs_attrs = qw(name owner server state queue nodes walltime elapsed init); 
 
 # <attributes > 
-has 'qstat', ( 
+has 'qstat_f', ( 
     is       => 'ro', 
     isa      => 'HashRef[Str]', 
     traits   => ['Hash'],
@@ -27,11 +27,10 @@ has 'qstat', (
     init_arg => undef,  
 
     default => sub ( $self ) { 
-        my $id    = $self->id; 
         my $status  = {}; 
         my $qstat = IO::Pipe->new(); 
 
-        $qstat->reader("qstat -f $id"); 
+        $qstat->reader("qstat -f ${\$self->id}"); 
         while ( <$qstat> ) {  
             if    ( /job_name = (.*)/i                ) { $status->{name}     = $1 } 
             elsif ( /job_owner = (.*)@/i              ) { $status->{owner}    = $1 }
@@ -54,6 +53,8 @@ has 'qstat', (
             }
         }
 
+        $qstat->close; 
+
         # elapsed time can be undef if job has not started !  
         $status->{elapsed} //= '---'; 
 
@@ -62,6 +63,34 @@ has 'qstat', (
 
     # currying delegation 
     handles => { map { $_ => [ get => $_ ] } @pbs_attrs } 
+); 
+
+has 'qstat_a', ( 
+    is       => 'ro', 
+    isa      => 'HashRef[ArrayRef[Str]]', 
+    traits   => ['Hash'],
+    lazy     => 1, 
+    init_arg => undef,  
+
+    default  => sub ( $self ) { 
+        my $queue = {}; 
+        my $qstat = IO::Pipe->new(); 
+
+        $qstat->reader("qstat -a"); 
+        while ( <$qstat> ) { 
+            if ( /\d+\.$ENV{HOSTNAME}/ ) { 
+                my ( $id, $owner ) = split;  
+                push $queue->{$owner}->@*, $id;  
+            } 
+        } 
+
+        $qstat->close; 
+
+        return $queue; 
+    },  
+
+    # currying delegation
+    handles => { list_user_job => [ get => $ENV{USER} ] } 
 ); 
 
 sub status ( $self) { 

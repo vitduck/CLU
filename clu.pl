@@ -15,6 +15,7 @@ use Data::Printer;
 
 # OO
 use PBS::Job; 
+use PBS::Queue; 
 
 # POD 
 my @usages = qw( NAME SYSNOPSIS OPTIONS );  
@@ -62,7 +63,8 @@ GetOptions(
 if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }  
 
 # default behaviors 
-my @ids  = exists $option{id}   ? $option{id}->@* : get_job_id(); 
+my @all  = PBS::Queue->new->list_user_job->@*; 
+my @ids  = exists $option{id}   ? $option{id}->@* : @all; 
 my $mode = exists $option{mode} ? $option{mode}   : 'status';   
 
 # status format (for instance, oneline) 
@@ -75,16 +77,3 @@ my @jobs = map { PBS::Job->new(id => $_) } @ids;
 
 # I am CLU 
 for my $job ( @jobs ) { $job->$mode } 
-
-sub get_job_id { 
-    my @ids; 
-
-    my $qstat = IO::Pipe->new();
-    $qstat->reader("qstat -a"); 
-    while ( <$qstat> ) { 
-        my ( $id, $user ) = (split)[0,1]; 
-        if ( /$ENV{USER}/ ) { push @ids, $id }
-    } 
-
-    return @ids; 
-} 
