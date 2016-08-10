@@ -14,7 +14,7 @@ use experimental qw(signatures);
 # <methods> 
 # ask for users consent before reset/delete job 
 sub prompt ( $self, $task ) { 
-    printf "\n=> %s %s [yN]: ", ucfirst($task), $self->id; 
+    printf "\n=> %s %s ? y/s [n] ", ucfirst($task), $self->id; 
     if ( my $confirmation = <STDIN> =~ /y|yes/i ) { return 1 }  
 } 
 

@@ -30,21 +30,21 @@ clu.pl -i JOB_ID -m status -f oneline
 
 =head1 OPTIONS
 
-=over 12
+=over 16
 
-=item B<-h --help>
+=item B<-h, --help>
 
 Print the help message and exit.
 
-=item B<-i --id> 
+=item B<-i, --id> 
 
 List of Job ID 
 
-=item B<-m --mode> 
+=item B<-m, --mode> 
 
 Available mode: status, delete, reset 
 
-=item B<-f --format> 
+=item B<-f, --format> 
 
 Format of status output, such as oneline
 
