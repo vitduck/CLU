@@ -12,6 +12,7 @@ use Pod::Usage;
 
 # cpan 
 use Data::Printer; 
+use Try::Tiny; 
 
 # OO
 use PBS::Job; 
@@ -62,8 +63,10 @@ GetOptions(
 # help message 
 if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }  
 
+# construct a list of user's jobs 
+my @all  = try { PBS::Queue->new->list_user_job->@* }; 
+
 # default behaviors 
-my @all  = PBS::Queue->new->list_user_job->@*; 
 my @ids  = exists $option{id}   ? $option{id}->@* : @all; 
 my $mode = exists $option{mode} ? $option{mode}   : 'status';   
 
