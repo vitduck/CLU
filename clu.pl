@@ -11,7 +11,7 @@ use IO::Pipe;
 use Pod::Usage; 
 
 # cpan 
-use Data::Printer; 
+use Data::Printer output => 'stdout';  
 use Try::Tiny; 
 
 # OO
@@ -50,6 +50,10 @@ Available mode: status, delete, reset
 
 Format of status output, such as oneline
 
+=item B<-y, --yes>
+
+Answer yes to all user prompts 
+
 =back 
 
 =cut
@@ -57,14 +61,17 @@ Format of status output, such as oneline
 # parse optional arguments 
 GetOptions(
     \ my %option, 
-    'help', 'id=s@{1,}', 'mode=s', 'format=s' 
+    'help', 'id=s@{1,}', 'mode=s', 'format=s', 'yes' 
 ) or pod2usage(-verbose => 1); 
 
 # help message 
 if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }  
 
 # construct a list of user's jobs 
-my @all  = try { PBS::Queue->new->list_user_job->@* }; 
+my @all  = try { PBS::Queue->new
+                           ->list_user_job
+                           ->@* 
+}; 
 
 # default behaviors 
 my @ids  = exists $option{id}   ? $option{id}->@* : @all; 
@@ -75,8 +82,11 @@ if ( $mode eq 'status' and exists $option{format} ) {
     $mode = join '_', $mode, $option{format} 
 } 
 
-# object constructions 
-my @jobs = map { PBS::Job->new(id => $_) } @ids; 
-
-# I am CLU 
-for my $job ( @jobs ) { $job->$mode } 
+# I am CLU
+for my $id ( @ids ) { 
+    my $job = PBS::Job->new( id => $id,  
+                             yes => exists($option{yes})
+    ); 
+    
+    $job->$mode; 
+}

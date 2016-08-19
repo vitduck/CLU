@@ -29,6 +29,11 @@ has 'id', (
     required => 1 
 ); 
 
+has 'yes', ( 
+    is        => 'ro', 
+    isa       => 'Bool', 
+); 
+
 has 'bootstrap', ( 
     is        => 'ro', 
     isa       => 'Str', 
@@ -62,21 +67,14 @@ after status => sub ( $self ) {
     } 
 }; 
 
-# simplify the constructor: ->new(ID) 
-override BUILDARGS => sub ( $class, @args ) { 
-    if ( @args == 1 and ID->check($args[0]) ) { return { id => $args[0] } } 
-
-    return super; 
-}; 
-
 # Moose methods
 # delete and clean bootstrap directory 
 sub delete ( $self ) { 
     $self->status; 
 
-    if ( $self->prompt('delete') ) { 
+    if ( $self->yes or $self->prompt('delete') ) { 
         system 'qdel', $self->id;  
-        if ( $self->has_bootstrap ) { rmtree $self->bootstrap };  
+        if ( $self->has_bootstrap ) { rmtree $self->bootstrap }
     }
 } 
 
@@ -84,8 +82,11 @@ sub delete ( $self ) {
 sub reset ( $self ) { 
     $self->status; 
 
-    if ( $self->has_bookmark and $self->prompt('reset') ) { unlink join '/', $self->bookmark, 'OUTCAR' }
-} 
+    #if ( $self->has_bookmark and $self->prompt('reset') ) { unlink join '/', $self->bookmark, 'OUTCAR' }
+    if ( $self->yes or $self->prompt('reset') ) { 
+        if ( $self->has_bookmark ) { unlink join '/', $self->bookmark, 'OUTCAR' }
+    }
+}
 
 sub status_oneline ( $self ) {  
     # depending on status of the job, print bookmark or init
@@ -96,13 +97,19 @@ sub status_oneline ( $self ) {
     printf "%s %s (%s)\n", $self->id, $dir , $self->state; 
 } 
 
+# simplify the constructor: ->new(id) 
+override BUILDARGS => sub ( $class, @args ) { 
+    if ( @args == 0 and id->check($args[0]) ) { return { id => $args[0] } } 
+
+    return super; 
+}; 
+
 # parse output of qstatf -> set bootstrap -> set bookmark 
 sub BUILD ( $self, @args ) { 
     # populate the status of job 
     $self->qstat_f;     
 
-    # owner of the job is also the user 
-    # who runs the scripts 
+    # owner of the job is also the user who runs the scripts 
     if ( $self->owner eq $ENV{USER} ) { 
         $self->bootstrap; 
         $self->bookmark; 
