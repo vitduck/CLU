@@ -1,14 +1,12 @@
 package PBS::Queue; 
 
-# pragma 
-use autodie; 
-use warnings FATAL => 'all'; 
-
 # cpan  
 use Moose; 
 use namespace::autoclean; 
 
-# features  
+# pragma 
+use autodie; 
+use warnings FATAL => 'all'; 
 use experimental qw(signatures);  
 
 # Moose roles 

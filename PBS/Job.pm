@@ -1,9 +1,5 @@
 package PBS::Job;
 
-# pragma 
-use autodie; 
-use warnings FATAL => 'all'; 
-
 # core 
 use File::Find; 
 use File::Path qw(rmtree); 
@@ -13,7 +9,9 @@ use Term::ANSIColor;
 use Moose; 
 use namespace::autoclean; 
 
-# features  
+# pragma 
+use autodie; 
+use warnings FATAL => 'all'; 
 use experimental qw(signatures);  
 
 # Moose types

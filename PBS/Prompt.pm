@@ -1,14 +1,12 @@
 package PBS::Prompt; 
 
-# pragma
-use autodie; 
-use warnings FATAL => 'all'; 
-
 # cpan
 use Moose::Role;  
 use namespace::autoclean; 
 
-# features
+# pragma
+use autodie; 
+use warnings FATAL => 'all'; 
 use experimental qw(signatures); 
 
 # <methods> 

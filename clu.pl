@@ -1,10 +1,5 @@
 #!/usr/bin/env perl 
 
-# pragma 
-use autodie; 
-use strict; 
-use warnings; 
-
 # core
 use Getopt::Long; 
 use IO::Pipe; 
@@ -14,7 +9,12 @@ use Pod::Usage;
 use Data::Printer output => 'stdout';  
 use Try::Tiny; 
 
-# OO
+# pragma 
+use autodie; 
+use strict; 
+use warnings; 
+
+# Moose class
 use PBS::Job; 
 use PBS::Queue; 
 

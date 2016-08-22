@@ -1,15 +1,12 @@
 package PBS::Types; 
 
-# pragma
-use autodie; 
-use warnings FATAL => 'all'; 
-
 # cpan
 use MooseX::Types -declare => [ qw(ID) ];   
 use MooseX::Types::Moose qw(Str); 
 
-# features
-use experimental qw(signatures); 
+# pragma
+use autodie; 
+use warnings FATAL => 'all'; 
 
 subtype ID, as Str, where { /\d+(\.$ENV{HOSTNAME})?/ };  
 

@@ -1,9 +1,5 @@
 package PBS::Qstat; 
 
-# pragma
-use autodie; 
-use warnings FATAL => 'all'; 
-
 # core
 use IO::Pipe; 
 use Term::ANSIColor; 
@@ -12,7 +8,9 @@ use Term::ANSIColor;
 use Moose::Role;  
 use namespace::autoclean; 
 
-# features
+# pragma
+use autodie; 
+use warnings FATAL => 'all'; 
 use experimental qw(signatures); 
 
 # PBS attributes 
