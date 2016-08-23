@@ -53,7 +53,11 @@ has 'bookmark', (
 
     default   => sub ( $self ) { 
         my %mod_time = (); 
-        find( sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, $self->init ); 
+        find( { 
+                wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ },
+                follow => 1 
+               }, $self->init 
+        ); 
         return ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
     }, 
 ); 
