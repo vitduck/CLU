@@ -22,14 +22,20 @@ with qw(PBS::Qstat PBS::Prompt);
 
 # Moose attributes 
 has 'id', ( 
-    is       => 'ro', 
-    isa      => ID, 
-    required => 1 
+    is        => 'ro', 
+    isa       => ID, 
+    required  => 1 
 ); 
 
 has 'yes', ( 
     is        => 'ro', 
     isa       => 'Bool', 
+); 
+
+has 'follow_symbolic', ( 
+    is        => 'ro', 
+    isa       => 'Bool', 
+    default   => 0, 
 ); 
 
 has 'bootstrap', ( 
@@ -53,19 +59,39 @@ has 'bookmark', (
 
     default   => sub ( $self ) { 
         my %mod_time = (); 
-        find( { 
-                wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ },
-                follow => 1 
-               }, $self->init 
+
+        find( { wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, follow => $self->follow_symbolic }, 
+                $self->init 
         ); 
-        return ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
+
+        # current calculation directory 
+        my $bookmark =  ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
+
+        # populate the history  
+        if ( $bookmark ne $self->bootstrap ) { 
+            $self->add_to_history($bookmark); 
+        } 
+        
+        return $bookmark; 
     }, 
+); 
+
+has 'history', ( 
+    is        => 'ro', 
+    isa       => 'ArrayRef[Str]', 
+    traits    => ['Array'], 
+    lazy      => 1, 
+    init_arg  => undef, 
+
+    default   => sub { ['---'] }, 
+    handles   => { add_to_history => 'unshift' }, 
 ); 
 
 # Moose modifiers 
 after status => sub ( $self ) { 
     if ( $self->has_bookmark ) { 
         printf "%-9s=> %s\n", ucfirst('bookmark'), $self->bookmark =~ s/${\$self->init}\///r;  
+        printf "%-9s=> %s\n", ucfirst('previous'), $self->history->[0] =~ s/${\$self->init}\///r;  
     } 
 }; 
 
@@ -84,7 +110,6 @@ sub delete ( $self ) {
 sub reset ( $self ) { 
     $self->status; 
 
-    #if ( $self->has_bookmark and $self->prompt('reset') ) { unlink join '/', $self->bookmark, 'OUTCAR' }
     if ( $self->yes or $self->prompt('reset') ) { 
         if ( $self->has_bookmark ) { unlink join '/', $self->bookmark, 'OUTCAR' }
     }
@@ -101,7 +126,7 @@ sub status_oneline ( $self ) {
 
 # simplify the constructor: ->new(id) 
 override BUILDARGS => sub ( $class, @args ) { 
-    if ( @args == 0 and id->check($args[0]) ) { return { id => $args[0] } } 
+    if ( @args == 1 and ID->check($args[0]) ) { return { id => $args[0] } } 
 
     return super; 
 }; 

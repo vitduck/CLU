@@ -84,7 +84,7 @@ if ( $mode eq 'status' and exists $option{format} ) {
 
 # I am CLU
 for my $id ( @ids ) { 
-    my $job = PBS::Job->new( id => $id,  
+    my $job = PBS::Job->new( id  => $id,  
                              yes => exists($option{yes})
     ); 
     
