@@ -1,13 +1,10 @@
 package PBS::Types; 
 
-# cpan
-use MooseX::Types -declare => [ qw(ID) ];   
-use MooseX::Types::Moose qw(Str); 
-
-# pragma
-use autodie; 
-use warnings FATAL => 'all'; 
+use strictures 2; 
+use namespace::autoclean; 
+use MooseX::Types -declare => [ qw( ID ) ];   
+use MooseX::Types::Moose qw( Str ); 
 
 subtype ID, as Str, where { /\d+(\.$ENV{HOSTNAME})?/ };  
 
-1; 
+1 

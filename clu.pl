@@ -1,22 +1,12 @@
 #!/usr/bin/env perl 
 
-# core
-use Getopt::Long; 
-use IO::Pipe; 
-use Pod::Usage; 
-
-# cpan 
-use Data::Printer output => 'stdout';  
-use Try::Tiny; 
-
-# pragma 
 use autodie; 
-use strict; 
-use warnings; 
-
-# Moose class
-use PBS::Job; 
-use PBS::Queue; 
+use strictures 2; 
+use Getopt::Long; 
+use Pod::Usage; 
+use PBS::CLU;  
+use feature qw( switch ); 
+use experimental qw( smartmatch ); 
 
 # POD 
 my @usages = qw( NAME SYSNOPSIS OPTIONS );  
@@ -40,11 +30,11 @@ Print the help message and exit.
 
 =item B<-i, --id> 
 
-List of Job ID 
+List of jobs  
 
-=item B<-m, --mode> 
+=item B<-u, --user> 
 
-Available mode: status, delete, reset 
+Owner of jobs 
 
 =item B<-f, --format> 
 
@@ -61,32 +51,25 @@ Answer yes to all user prompts
 # parse optional arguments 
 GetOptions(
     \ my %option, 
-    'help', 'id=s@{1,}', 'mode=s', 'format=s', 'yes' 
+    'help', 'id=s@{1,}', 'user=s', 'format=s', 'yes' 
 ) or pod2usage(-verbose => 1); 
 
 # help message 
 if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }  
 
-# construct a list of user's jobs 
-my @all  = try { PBS::Queue->new
-                           ->list_user_job
-                           ->@* 
-}; 
-
 # default behaviors 
-my @ids  = exists $option{id}   ? $option{id}->@* : @all; 
-my $mode = exists $option{mode} ? $option{mode}   : 'status';   
+my $pbs = 
+    exists $option{user} ? PBS::CLU->new( user => $option{user}, yes => exists $option{yes} ) :  
+    exists $option{id}   ? PBS::CLU->new( job  => $option{id}  , yes => exists $option{yes} ) :   
+    PBS::CLU->new( yes => exists $option{yes} ); 
 
-# status format (for instance, oneline) 
-if ( $mode eq 'status' and exists $option{format} ) { 
-    $mode = join '_', $mode, $option{format} 
-} 
-
-# I am CLU
-for my $id ( @ids ) { 
-    my $job = PBS::Job->new( id  => $id,  
-                             yes => exists($option{yes})
-    ); 
+my $mode = shift @ARGV // 'status'; 
+given ( $mode ) { 
+    $pbs->status when /status/; 
+    $pbs->delete when /delete/; 
+    $pbs->reset  when /reset/; 
     
-    $job->$mode; 
-}
+    default { 
+        pod2usage( -verbose => 1 )
+    } 
+} 
