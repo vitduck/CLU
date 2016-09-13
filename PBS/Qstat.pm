@@ -1,26 +1,31 @@
 package PBS::Qstat; 
 
 use autodie; 
-use strictures 2; 
+use strict; 
+use warnings FATAL => 'all'; 
 use namespace::autoclean; 
+
 use IO::Pipe; 
+
 use Moose::Role;  
-use MooseX::Types::Moose qw( Str HashRef ); 
+use MooseX::Types::Moose qw( HashRef ); 
+
 use experimental qw( signatures ); 
 
 # <attributes > 
 has '_qstat', ( 
     is       => 'ro', 
-    isa      => HashRef[HashRef[Str]],  
-    traits   => ['Hash'],
+    isa      => HashRef,  
+    traits   => [ 'Hash' ],
     lazy     => 1, 
     init_arg => undef,  
 
     default => sub ( $self ) { 
-        my $qstat = { };  
+        my $qstat = {};  
         my $pipe  = IO::Pipe->new(); 
 
         $pipe->reader("qstat -f"); 
+
         while ( <$pipe> ) {  
             if ( /Job Id: (.*)/ ) { 
                 my $id = $1; 
@@ -54,15 +59,16 @@ has '_qstat', (
                 }
             }
         }
+
         $pipe->close; 
 
         return $qstat; 
     }, 
 
     handles   => { 
-        has_job       => 'exists',  
-        get_all_jobs  => 'keys', 
-        get_qstatf    => 'kv', 
+        validate_job => 'exists',  
+        get_all_jobs => 'keys', 
+        get_qstatf   => 'kv', 
     }
 ); 
 

@@ -1,11 +1,13 @@
 package PBS::Job; 
 
-use strictures 2; 
+use strict;  
+use warnings FATAL => 'all'; 
 use namespace::autoclean; 
-use Try::Tiny; 
+
 use Moose::Role;  
-use MooseX::Types::Moose qw( Str Int ArrayRef HashRef ); 
+use MooseX::Types::Moose qw( Str Int ArrayRef ); 
 use PBS::Types qw( ID ); 
+
 use experimental qw( signatures ); 
 
 has 'user', ( 
@@ -20,11 +22,16 @@ has 'job', (
     isa       => ArrayRef[ID],  
     traits    => [ 'Array' ], 
     lazy      => 1, 
+    predicate => 'has_job', 
+    writer    => '_set_job', 
 
     default   => sub ( $self ) { 
         return [ 
+            # all jobs 
             $self->user eq '*' ? 
             sort { $a cmp $b } $self->get_all_jobs :  
+
+            # specific user's jobs 
             sort { $a cmp $b }
             map  $_->[0], 
             grep $_->[1]->{owner} eq $self->user, $self->get_qstatf
@@ -36,12 +43,8 @@ has 'job', (
     }
 ); 
 
-sub delete_job ( $self, $job ) { 
-    system 'qdel', $job if $self->user eq $ENV{USER}
+sub qdel ( $self, $job ) { 
+    system 'qdel', $job;  
 } 
-
-sub reset_job ( $self, $job ) { 
-    $self->delete_job_bookmark( $job )
-}
 
 1 

@@ -1,14 +1,18 @@
 package PBS::Status; 
 
-use strictures 2; 
+use strict; 
+use warnings FATAL => 'all'; 
 use namespace::autoclean; 
+
 use Term::ANSIColor; 
 use Moose::Role;  
 use MooseX::Types::Moose qw( Str ArrayRef HashRef ); 
+
 use experimental qw( signatures ); 
 
 my @attributes = qw( owner state queue nodes walltime elapsed init );  
 
+# install basic PBS attributes and accessor 
 for my $attr ( @attributes ) { 
     has $attr, ( 
         is        => 'ro', 
@@ -27,7 +31,8 @@ for my $attr ( @attributes ) {
     ); 
 }
 
-has 'status_header', ( 
+# colorized status headder 
+has 'header', ( 
     is        => 'ro', 
     isa       => HashRef, 
     traits    => [ 'Hash' ], 
@@ -51,19 +56,21 @@ has 'status_header', (
     } 
 ); 
 
-sub print_job_status ( $self, $job ) { 
-    # header 
+sub print_header( $self, $job ) {
     printf "\n%s\n", $self->get_header( $job );
+} 
 
-    # basic PBS 
+sub print_qstat ( $self, $job ) { 
     for my $attr ( @attributes) { 
-        # basic PBS attirbutes  
         my $get_attr = 'get_'.$attr;  
         printf "%-9s=> %s\n", ucfirst($attr), $self->$get_attr( $job );  
     }
-    
-    # extended PBS 
-    $self->print_job_bookmark( $job )
+}  
+
+sub print_status ( $self, $job ) { 
+    $self->print_header  ( $job ); 
+    $self->print_qstat   ( $job );     
+    $self->print_bookmark( $job )
 }
 
 1 

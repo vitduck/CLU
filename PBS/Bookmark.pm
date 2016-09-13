@@ -1,11 +1,16 @@
 package PBS::Bookmark; 
 
-use strictures 2; 
+use strict; 
+use warnings FATAL => 'all'; 
 use namespace::autoclean; 
-use Term::ANSIColor; 
+
+use Try::Tiny; 
 use File::Find; 
+use Term::ANSIColor; 
+
 use Moose::Role;  
 use MooseX::Types::Moose qw( HashRef ); 
+
 use experimental qw( signatures ); 
 
 has 'bookmark', ( 
@@ -19,34 +24,34 @@ has 'bookmark', (
         my $bookmark = { }; 
 
         for my $job ( $self->get_user_jobs ) { 
-            my %mod_time = (); 
-            find( 
-                { wanted => 
-                    sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
-                    follow => $self->follow_symbolic 
-                }, $self->get_init( $job ) 
-            ); 
+            try { 
+                my %mod_time = (); 
+                find( 
+                    { wanted => 
+                        sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
+                        follow => $self->follow_symbolic 
+                    }, $self->get_init( $job ) 
+                ); 
+                my $outcar = ( 
+                    sort { $mod_time{$a} <=> $mod_time{$b} } 
+                    keys %mod_time 
+                )[0] =~ s/\/OUTCAR//r; 
 
-            # current OUTCAR
-            my $outcar =  ( 
-                sort { $mod_time{$a} <=> $mod_time{$b} } 
-                keys %mod_time 
-            )[0] =~ s/\/OUTCAR//r; 
-
-            $bookmark->{$job} = $outcar if $outcar; 
+                $bookmark->{$job} = $outcar; 
+            }; 
         }
 
         return $bookmark; 
     }, 
 
     handles   => { 
-        has_bookmark => 'exists', 
+        has_bookmark => 'count', 
         get_bookmark => 'get'
     } 
 ); 
 
-sub print_job_bookmark ( $self, $job ) { 
-    if ( $self->has_bookmark( $job ) ) {  
+sub print_bookmark ( $self, $job ) { 
+    if ( $self->has_bookmark ) {  
         # trim the leading path 
         my $init     = $self->get_init( $job ); 
         my $bookmark = $self->get_bookmark( $job ) =~ s/$init\///r; 
@@ -54,9 +59,8 @@ sub print_job_bookmark ( $self, $job ) {
     }
 } 
 
-sub delete_job_bookmark ( $self, $job ) { 
-    if ( $self->has_bookmark( $job ) ) { 
-        unlink join '/', $self->get_bookmark( $job), 'OUTCAR'
-    } 
+sub remove_bookmark ( $self, $job ) { 
+    unlink join '/', $self->get_bookmark( $job), 'OUTCAR' if  $self->has_bookmark 
 } 
+
 1 

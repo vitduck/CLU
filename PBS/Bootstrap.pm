@@ -1,11 +1,15 @@
 package PBS::Bootstrap; 
 
-use strictures 2; 
+use strict; 
+use warnings FATAL => 'all'; 
 use namespace::autoclean; 
-use File::Path qw( rmtree ); 
+
 use Term::ANSIColor; 
+use File::Path qw( rmtree ); 
+
 use Moose::Role;  
 use MooseX::Types::Moose qw( HashRef ); 
+
 use experimental qw( signatures ); 
 
 has 'bootstrap', ( 
@@ -20,7 +24,7 @@ has 'bootstrap', (
 
         for my $job ( $self->get_user_jobs ) { 
             # skip queued job 
-            next unless $self->get_state( $job ) eq 'R';  
+            if ( $self->get_state( $job ) ne 'R' ) { next }   
 
             # dir glob 
             my $dir = ( 
@@ -35,13 +39,13 @@ has 'bootstrap', (
     },  
 
     handles   => { 
-        has_bootstrap => 'exists', 
+        has_bootstrap => 'count', 
         get_bootstrap => 'get'
     } 
 ); 
 
-sub delete_job_bootstrap ( $self, $job  ) { 
-    rmtree $self->get_bootstrap( $job ) if $self->has_bootstrap( $job );  
-} 
+sub delete_bootstrap ( $self, $job  ) { 
+    rmtree $self->get_bootstrap( $job ) if $self->has_bootstrap 
+}
 
 1 

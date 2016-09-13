@@ -28,7 +28,7 @@ clu.pl -i JOB_ID -m status -f oneline
 
 Print the help message and exit.
 
-=item B<-i, --id> 
+=item B<-j, --job> 
 
 List of jobs  
 
@@ -51,7 +51,7 @@ Answer yes to all user prompts
 # parse optional arguments 
 GetOptions(
     \ my %option, 
-    'help', 'id=s@{1,}', 'user=s', 'format=s', 'yes' 
+    'help', 'job=s@{1,}', 'user=s', 'format=s', 'yes' 
 ) or pod2usage(-verbose => 1); 
 
 # help message 
@@ -59,11 +59,17 @@ if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }
 
 # default behaviors 
 my $pbs = 
-    exists $option{user} ? PBS::CLU->new( user => $option{user}, yes => exists $option{yes} ) :  
-    exists $option{id}   ? PBS::CLU->new( job  => $option{id}  , yes => exists $option{yes} ) :   
-    PBS::CLU->new( yes => exists $option{yes} ); 
+    exists $option{user} ? PBS::CLU->new( user => $option{user} ) :  
+    exists $option{job}  ? PBS::CLU->new( job  => $option{job}  ) :   
+    PBS::CLU->new(); 
 
+# default mode
 my $mode = shift @ARGV // 'status'; 
+
+# answer yes to prompt 
+$pbs->set_yes( exists $option{yes} ); 
+
+# switch 
 given ( $mode ) { 
     $pbs->status when /status/; 
     $pbs->delete when /delete/; 
