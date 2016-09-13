@@ -5,7 +5,7 @@ use warnings FATAL => 'all';
 use namespace::autoclean; 
 
 use Moose; 
-use MooseX::Types::Moose qw( Bool ); 
+use MooseX::Types::Moose qw( Bool Str ); 
 with qw( PBS::Qstat PBS::Status ),  
      qw( PBS::Job PBS::Bootstrap PBS::Bookmark ),  
      qw( PBS::Prompt );  
@@ -20,6 +20,14 @@ has 'yes', (
     default   => 0 
 ); 
 
+has 'format', ( 
+    is        => 'rw', 
+    isa       => Str, 
+    lazy      => 1, 
+    writer    => 'set_format', 
+    default   => ''
+); 
+
 has 'follow_symbolic', ( 
     is        => 'ro', 
     isa       => Bool, 
@@ -29,7 +37,7 @@ has 'follow_symbolic', (
 
 sub status ( $self ) { 
     for my $job ( $self->get_user_jobs ) {  
-        $self->print_status( $job )
+        $self->print_status( $job, $self->format )
     }
 } 
 

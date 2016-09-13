@@ -63,13 +63,14 @@ my $pbs =
     exists $option{job}  ? PBS::CLU->new( job  => $option{job}  ) :   
     PBS::CLU->new(); 
 
-# default mode
-my $mode = shift @ARGV // 'status'; 
-
-# answer yes to prompt 
+# set yes to all prompt 
 $pbs->set_yes( exists $option{yes} ); 
 
+# set format of status 
+$pbs->set_format( $option{format} //= '' ); 
+
 # switch 
+my $mode = shift @ARGV // 'status'; 
 given ( $mode ) { 
     $pbs->status when /status/; 
     $pbs->delete when /delete/; 
