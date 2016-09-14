@@ -68,7 +68,7 @@ sub print_qstat ( $self, $job ) {
     }
 }  
 
-sub print_status ( $self, $job, $format ) { 
+sub print_status ( $self, $job, $format = '' ) { 
     given ( $format ) {  
         $self->print_status_oneline( $job ) when /oneline/; 
 

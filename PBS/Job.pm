@@ -27,11 +27,6 @@ has 'job', (
 
     default   => sub ( $self ) { 
         return [ 
-            # all jobs 
-            $self->user eq '*' ? 
-            sort { $a cmp $b } $self->get_all_jobs :  
-
-            # specific user's jobs 
             sort { $a cmp $b }
             map  $_->[0], 
             grep $_->[1]->{owner} eq $self->user, $self->get_qstatf
