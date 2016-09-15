@@ -32,14 +32,15 @@ has '_qstat', (
                 $qstat->{$id} = {};  
                 # use local version of $_ 
                 while ( local $_ = <$pipe> ) {    
-                    if    ( /job_owner = (.*)@/i              ) { $qstat->{$id}{owner}    = $1 }
-                    elsif ( /server = (.*)/i                  ) { $qstat->{$id}{server}   = $1 } 
-                    elsif ( /job_state = (Q|R|C|E)/i          ) { $qstat->{$id}{state}    = $1 } 
-                    elsif ( /queue = (.*)/i                   ) { $qstat->{$id}{queue}    = $1 } 
-                    elsif ( /resource_list.nodes = (.*)/i     ) { $qstat->{$id}{nodes}    = $1 } 
+                    if    ( /job_name = (.*)/i )                { $qstat->{$id}{name}     = $1 } 
+                    elsif ( /job_owner = (.*)@/i)               { $qstat->{$id}{owner}    = $1 }
+                    elsif ( /server = (.*)/i )                  { $qstat->{$id}{server}   = $1 } 
+                    elsif ( /job_state = (Q|R|C|E)/i )          { $qstat->{$id}{state}    = $1 } 
+                    elsif ( /queue = (.*)/i )                   { $qstat->{$id}{queue}    = $1 } 
+                    elsif ( /resource_list.nodes = (.*)/i )     { $qstat->{$id}{nodes}    = $1 } 
                     elsif ( /resource_list.walltime = (.*)/i  ) { $qstat->{$id}{walltime} = $1 } 
                     elsif ( /resources_used.walltime = (.*)/i ) { $qstat->{$id}{elapsed}  = $1 } 
-                    elsif ( /init_work_dir = (.*)/i           ) { 
+                    elsif ( /init_work_dir = (.*)/i ) { 
                         # special case for init_work_dir 
                         # single line 
                         $qstat->{$id}{init} = $1;  

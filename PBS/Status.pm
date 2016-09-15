@@ -12,7 +12,7 @@ use MooseX::Types::Moose qw( Str ArrayRef HashRef );
 use experimental qw( signatures smartmatch ); 
 
 # install basic PBS attributes and accessor 
-my @attributes = qw( owner state queue nodes walltime elapsed init );  
+my @attributes = qw( name owner state queue nodes walltime elapsed init );  
 
 for my $attr ( @attributes ) { 
     has $attr, ( 
