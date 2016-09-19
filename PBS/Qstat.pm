@@ -12,7 +12,6 @@ use MooseX::Types::Moose qw( HashRef );
 
 use experimental qw( signatures ); 
 
-# <attributes > 
 has '_qstat', ( 
     is       => 'ro', 
     isa      => HashRef,  

@@ -82,7 +82,7 @@ sub print_status ( $self, $job, $format = '' ) {
 
 sub print_status_oneline ( $self, $job ) { 
     my $dir = 
-        $self->get_state( $job ) eq 'R' && $self->has_bookmark ?  
+        $self->get_state( $job ) eq 'R' && $self->has_bookmark( $job ) ?  
         $self->get_bookmark( $job ) =~ s/$ENV{HOME}/~/r : 
         $self->get_init( $job )     =~ s/$ENV{HOME}/~/r; 
 

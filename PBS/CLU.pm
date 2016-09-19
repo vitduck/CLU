@@ -5,12 +5,41 @@ use warnings FATAL => 'all';
 use namespace::autoclean; 
 
 use Moose; 
-use MooseX::Types::Moose qw( Bool Str ); 
-with qw( PBS::Qstat PBS::Status ),  
-     qw( PBS::Job PBS::Bootstrap PBS::Bookmark ),  
+use MooseX::Types::Moose qw( Bool Str ArrayRef ); 
+use PBS::Types qw( ID ); 
+with qw( PBS::Qstat PBS::Qdel PBS::Status ),  
+     qw( PBS::Bootstrap PBS::Bookmark ),  
      qw( PBS::Prompt );  
 
 use experimental qw( signatures );  
+
+has 'user', ( 
+    is        => 'ro', 
+    isa       => Str, 
+    lazy      => 1,
+    default   => $ENV{USER}  
+); 
+
+has 'job', ( 
+    is        => 'ro', 
+    isa       => ArrayRef[ID],  
+    traits    => [ 'Array' ], 
+    lazy      => 1, 
+    predicate => 'has_job', 
+    writer    => '_set_job', 
+
+    default   => sub ( $self ) { 
+        return [ 
+            sort { $a cmp $b }
+            map  $_->[0], 
+            grep $_->[1]->{owner} eq $self->user, $self->get_qstatf
+        ]
+    }, 
+
+    handles  => { 
+        get_user_jobs => 'elements' 
+    }
+); 
 
 has 'yes', ( 
     is        => 'rw', 

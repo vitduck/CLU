@@ -23,29 +23,24 @@ has 'bootstrap', (
         my $bootstrap = { }; 
 
         for my $job ( $self->get_user_jobs ) { 
-            # skip queued job 
-            if ( $self->get_state( $job ) ne 'R' ) { next }   
-
             # dir glob 
-            my $dir = ( 
+            $bootstrap->{$job} = (
                 grep { -d and /bootstrap-\d+/ } 
                 glob "${\$self->get_init( $job )}/*" 
             )[0]; 
-
-            $bootstrap->{$job} = $dir if $dir; 
         }
 
         return $bootstrap
     },  
 
     handles   => { 
-        has_bootstrap => 'count', 
+        has_bootstrap => 'defined', 
         get_bootstrap => 'get'
     } 
 ); 
 
 sub delete_bootstrap ( $self, $job  ) { 
-    rmtree $self->get_bootstrap( $job ) if $self->has_bootstrap 
+    rmtree $self->get_bootstrap( $job ) if $self->has_bootstrap( $job ) 
 }
 
 1 

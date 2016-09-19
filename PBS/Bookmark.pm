@@ -32,12 +32,10 @@ has 'bookmark', (
                         follow => $self->follow_symbolic 
                     }, $self->get_init( $job ) 
                 ); 
-                my $outcar = ( 
+                $bookmark->{$job} = ( 
                     sort { $mod_time{$a} <=> $mod_time{$b} } 
                     keys %mod_time 
                 )[0] =~ s/\/OUTCAR//r; 
-
-                $bookmark->{$job} = $outcar; 
             }; 
         }
 
@@ -45,13 +43,13 @@ has 'bookmark', (
     }, 
 
     handles   => { 
-        has_bookmark => 'count', 
+        has_bookmark => 'defined', 
         get_bookmark => 'get'
     } 
 ); 
 
 sub print_bookmark ( $self, $job ) { 
-    if ( $self->has_bookmark ) {  
+    if ( $self->has_bookmark( $job ) ) {  
         # trim the leading path 
         my $init     = $self->get_init( $job ); 
         my $bookmark = $self->get_bookmark( $job ) =~ s/$init\///r; 
@@ -60,7 +58,7 @@ sub print_bookmark ( $self, $job ) {
 } 
 
 sub remove_bookmark ( $self, $job ) { 
-    unlink join '/', $self->get_bookmark( $job), 'OUTCAR' if  $self->has_bookmark 
+    unlink join '/', $self->get_bookmark( $job), 'OUTCAR' if  $self->has_bookmark( $job )
 } 
 
 1 

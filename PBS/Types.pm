@@ -1,7 +1,9 @@
 package PBS::Types; 
 
-use strictures 2; 
+use strict; 
+use warnings FATAL => 'all'; 
 use namespace::autoclean; 
+
 use MooseX::Types -declare => [ qw( ID ) ];   
 use MooseX::Types::Moose qw( Str ); 
 
