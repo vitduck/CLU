@@ -9,6 +9,7 @@ use Term::ANSIColor;
 use Moose::Role;  
 use MooseX::Types::Moose qw( Str ArrayRef HashRef ); 
 
+use feature qw( state switch ); 
 use experimental qw( signatures smartmatch ); 
 
 # install basic PBS attributes and accessor 
@@ -41,21 +42,24 @@ has 'header', (
     init_arg  => undef, 
 
     default   => sub ( $self ) { 
-       return { 
-           map {
-               $_ => 
-                    $self->get_state( $_ ) eq 'R' ? 
-                    colored($_, 'bold underline blue') : 
-                    colored($_, 'bold underline red' ) ; 
-            } 
-           $self->get_user_jobs 
-       }  
+        return { map { $_ => $self->color_header( $_ ) } $self->get_user_jobs }  
     }, 
 
     handles   => { 
         get_header => 'get' 
     } 
 ); 
+
+sub color_header ( $self, $job ) { 
+    given ( $self->get_state( $job ) ) {  
+        return colored($job, 'bold blue') when /R/;  
+        return colored($job, 'bold red')  when /Q/;  
+        # 'C' or 'E'
+        default { 
+            colored($job, 'green' ); 
+        } 
+    } 
+} 
 
 sub print_header( $self, $job ) {
     printf "\n%s\n", $self->get_header( $job );
@@ -81,12 +85,16 @@ sub print_status ( $self, $job, $format = '' ) {
 }
 
 sub print_status_oneline ( $self, $job ) { 
+    state $count = 0;  
+
     my $dir = 
-        $self->get_state( $job ) eq 'R' && $self->has_bookmark( $job ) ?  
+        $self->has_bookmark( $job ) ?  
         $self->get_bookmark( $job ) =~ s/$ENV{HOME}/~/r : 
         $self->get_init( $job )     =~ s/$ENV{HOME}/~/r; 
 
-    printf "%s %s (%s)\n", $job, $dir , $self->get_state( $job ) 
+    printf "%02d. %s (%s) %s\n", 
+        ++$count, 
+        $self->get_header( $job ), $self->get_elapsed( $job ), $dir  
 } 
 
 1 
