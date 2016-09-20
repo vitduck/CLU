@@ -2,13 +2,12 @@ package PBS::Status;
 
 use strict; 
 use warnings FATAL => 'all'; 
-use namespace::autoclean; 
-use feature qw( switch );
 
 use Term::ANSIColor; 
 use Moose::Role;  
 use MooseX::Types::Moose qw( Str ArrayRef HashRef ); 
 
+use namespace::autoclean; 
 use feature qw( state switch ); 
 use experimental qw( signatures smartmatch ); 
 

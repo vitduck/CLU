@@ -2,10 +2,10 @@ package PBS::Prompt;
 
 use strict; 
 use warnings FATAL => 'all'; 
-use namespace::autoclean; 
 
 use Moose::Role;  
 
+use namespace::autoclean; 
 use experimental qw(signatures); 
 
 sub prompt ( $self, $method, $job ) { 

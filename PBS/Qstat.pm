@@ -3,13 +3,12 @@ package PBS::Qstat;
 use autodie; 
 use strict; 
 use warnings FATAL => 'all'; 
-use namespace::autoclean; 
 
 use IO::Pipe; 
-
 use Moose::Role;  
 use MooseX::Types::Moose qw( HashRef ); 
 
+use namespace::autoclean; 
 use experimental qw( signatures ); 
 
 has '_qstat', ( 

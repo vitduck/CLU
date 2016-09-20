@@ -2,15 +2,14 @@ package PBS::Bookmark;
 
 use strict; 
 use warnings FATAL => 'all'; 
-use namespace::autoclean; 
 
-use Try::Tiny; 
 use File::Find; 
 use Term::ANSIColor; 
-
+use Try::Tiny; 
 use Moose::Role;  
 use MooseX::Types::Moose qw( HashRef ); 
 
+use namespace::autoclean; 
 use experimental qw( signatures ); 
 
 has 'bookmark', ( 

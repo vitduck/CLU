@@ -2,14 +2,13 @@ package PBS::Bootstrap;
 
 use strict; 
 use warnings FATAL => 'all'; 
-use namespace::autoclean; 
 
-use Term::ANSIColor; 
 use File::Path qw( rmtree ); 
-
+use Term::ANSIColor; 
 use Moose::Role;  
 use MooseX::Types::Moose qw( HashRef ); 
 
+use namespace::autoclean; 
 use experimental qw( signatures ); 
 
 has 'bootstrap', ( 
