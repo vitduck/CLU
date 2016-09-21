@@ -60,10 +60,11 @@ GetOptions(
 if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }  
 
 # default behaviors 
-my $pbs = 
+my $pbs = ( 
     exists $option{user} ? PBS::CLU->new( user => $option{user} ) :  
     exists $option{job}  ? PBS::CLU->new( job  => $option{job}  ) :   
-    PBS::CLU->new(); 
+    PBS::CLU->new() 
+); 
 
 # set yes to all prompt 
 $pbs->set_yes( exists $option{yes} ); 
@@ -73,11 +74,11 @@ $pbs->set_format( $option{format} //= '' );
 
 # switch 
 my $mode = shift @ARGV // 'status'; 
+
 given ( $mode ) { 
-    $pbs->status when /status/; 
-    $pbs->delete when /delete/; 
-    $pbs->reset  when /reset/; 
-    
+    when ( /status/ ) { $pbs->status } 
+    when ( /delete/ ) { $pbs->delete } 
+    when ( /reset/  ) { $pbs->reset } 
     default { 
         pod2usage( -verbose => 1 )
     } 

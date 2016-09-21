@@ -21,14 +21,8 @@ for my $attr ( @attributes ) {
         traits    => [ 'Hash' ], 
         lazy      => 1, 
         init_arg  => undef, 
-
-        default   => sub ( $self ) { 
-            return { map  { $_->[0] => $_->[1]{$attr} } $self->get_qstatf } 
-        }, 
-
-        handles   => { 
-            'get_'.$attr => 'get', 
-        } 
+        default   => sub { return { map { $_->[0] => $_->[1]{$attr} } $_[0]->get_qstatf } }, 
+        handles   => { 'get_'.$attr => 'get' } 
     ); 
 }
 
@@ -39,22 +33,16 @@ has 'header', (
     traits    => [ 'Hash' ], 
     lazy      => 1, 
     init_arg  => undef, 
-
-    default   => sub ( $self ) { 
-        return { map { $_ => $self->color_header( $_ ) } $self->get_user_jobs }  
-    }, 
-
-    handles   => { 
-        get_header => 'get' 
-    } 
+    builder   => '_build_header',  
+    handles   => { get_header => 'get' } 
 ); 
 
 sub color_header ( $self, $job ) { 
     given ( $self->get_state( $job ) ) {  
-        return colored($job, 'bold blue') when /R/;  
-        return colored($job, 'bold red')  when /Q/;  
-        # 'C' or 'E'
+        when ( /R/ ) { return colored($job, 'bold blue') } 
+        when ( /Q/ ) { return colored($job, 'bold red')  } 
         default { 
+            # 'C' or 'E'
             colored($job, 'green' ); 
         } 
     } 
@@ -91,9 +79,16 @@ sub print_status_oneline ( $self, $job ) {
         $self->get_bookmark( $job ) =~ s/$ENV{HOME}/~/r : 
         $self->get_init( $job )     =~ s/$ENV{HOME}/~/r; 
 
-    printf "%02d. %s (%s) %s\n", 
-        ++$count, 
-        $self->get_header( $job ), $self->get_elapsed( $job ), $dir  
+    printf
+        "%02d. %s (%s) %s\n", 
+        ++$count, $self->get_header( $job ), $self->get_elapsed( $job ), $dir  
+} 
+
+sub _build_header ( $self ) { 
+    return { 
+        map { $_ => $self->color_header( $_ ) } $self->get_user_jobs 
+    }  
+
 } 
 
 1 
