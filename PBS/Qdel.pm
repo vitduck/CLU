@@ -3,11 +3,12 @@ package PBS::Qdel;
 use autodie; 
 use strict; 
 use warnings FATAL => 'all'; 
+use feature 'signatures';  
+use namespace::autoclean; 
 
 use Moose::Role;  
 
-use namespace::autoclean; 
-use experimental qw( signatures ); 
+no warnings 'experimental'; 
 
 sub qdel( $self, $job ) { 
     system 'qdel', $job;  

@@ -2,11 +2,12 @@ package PBS::Prompt;
 
 use strict; 
 use warnings FATAL => 'all'; 
+use feature 'signatures';  
+use namespace::autoclean; 
 
 use Moose::Role;  
 
-use namespace::autoclean; 
-use experimental qw(signatures); 
+no warnings 'experimental'; 
 
 sub prompt ( $self, $method, $job ) { 
     printf "\n=> %s %s ? y/s [n] ", ucfirst($method), $job;  

@@ -2,17 +2,18 @@ package PBS::CLU;
 
 use strict; 
 use warnings FATAL => 'all'; 
+use feature 'signatures'; 
+use namespace::autoclean; 
 
 use Moose; 
-use MooseX::Types::Moose qw( Bool Str ArrayRef ); 
-use PBS::Types qw( ID ); 
+use MooseX::Types::Moose 'Bool','Str','ArrayRef';  
+use PBS::Types 'ID';  
 
-use namespace::autoclean; 
-use experimental qw( signatures );  
+no warnings 'experimental'; 
 
-with qw( PBS::Qstat PBS::Qdel PBS::Status ),  
-     qw( PBS::Bootstrap PBS::Bookmark ),  
-     qw( PBS::Prompt );  
+with 'PBS::Qstat','PBS::Qdel','PBS::Status',  
+'PBS::Bootstrap','PBS::Bookmark',  
+'PBS::Prompt'; 
 
 has 'user', ( 
     is        => 'ro', 

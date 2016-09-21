@@ -2,13 +2,13 @@
 
 use strict; 
 use warnings FATAL => 'all'; 
+use feature 'switch';  
 
 use Getopt::Long; 
 use Pod::Usage; 
 use PBS::CLU;  
 
-use feature qw( switch ); 
-use experimental qw( smartmatch ); 
+no warnings 'experimental'; 
 
 # POD 
 my @usages = qw( NAME SYSNOPSIS OPTIONS );  

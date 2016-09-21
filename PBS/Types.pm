@@ -3,8 +3,8 @@ package PBS::Types;
 use strict; 
 use warnings FATAL => 'all'; 
 
-use MooseX::Types -declare => [ qw( ID ) ];   
-use MooseX::Types::Moose qw( Str ); 
+use MooseX::Types -declare => [ 'ID' ];   
+use MooseX::Types::Moose 'Str'; 
 
 subtype ID, as Str, where { /\d+(\.$ENV{HOSTNAME})?/ };  
 
