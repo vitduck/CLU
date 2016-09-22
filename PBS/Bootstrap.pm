@@ -1,20 +1,13 @@
 package PBS::Bootstrap; 
 
-use strict; 
-use warnings FATAL => 'all'; 
-use feature 'signatures'; 
-use namespace::autoclean; 
-
-use File::Path 'rmtree'; 
-use Term::ANSIColor; 
 use Moose::Role;  
-use MooseX::Types::Moose 'HashRef';  
-
-no warnings 'experimental';  
+use File::Path qw( rmtree );  
+use namespace::autoclean; 
+use experimental qw( signatures ); 
 
 has 'bootstrap', ( 
     is        => 'ro', 
-    isa       => HashRef,  
+    isa       => 'HashRef',  
     lazy      => 1, 
     traits    => [ 'Hash' ], 
     init_arg  => undef, 
@@ -29,11 +22,11 @@ sub _build_bootstrap ( $self ) {
     my %bootstrap = (); 
 
     for my $job ( $self->get_user_jobs ) { 
-        # dir glob 
         $bootstrap{$job} = (
-            grep { -d and /bootstrap-\d+/ } 
-            glob "${\$self->get_init( $job )}/*" 
-        )[0]; 
+            $self->get_owner( $job ) eq $ENV{USER} ?  
+            ( grep { -d and /bootstrap-\d+/ } glob "${\$self->get_init( $job )}/*" )[0] :
+            undef
+        )
     }
 
     return \%bootstrap

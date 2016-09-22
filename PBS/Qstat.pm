@@ -1,24 +1,17 @@
 package PBS::Qstat; 
 
-use autodie; 
-use strict; 
-use warnings FATAL => 'all'; 
-use feature 'signatures';  
-use namespace::autoclean; 
-
-use IO::Pipe; 
 use Moose::Role;  
-use MooseX::Types::Moose 'HashRef';  
-
-no warnings 'experimental'; 
+use IO::Pipe; 
+use namespace::autoclean; 
+use experimental qw( signatures ); 
 
 has '_qstat', ( 
     is       => 'ro', 
-    isa      => HashRef,  
+    isa      => 'HashRef',  
     traits   => [ 'Hash' ],
     lazy     => 1, 
     init_arg => undef,  
-    builder  => '_parse_qstat', 
+    builder  => '_build_qstat', 
     handles  => { 
         validate_job => 'exists',  
         get_all_jobs => 'keys', 
@@ -26,7 +19,7 @@ has '_qstat', (
     }
 ); 
 
-sub _parse_qstat ( $self ) { 
+sub _build_qstat ( $self ) { 
     my $qstat = {};  
     my $pipe  = IO::Pipe->new(); 
 

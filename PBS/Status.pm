@@ -1,23 +1,16 @@
 package PBS::Status; 
 
-use strict; 
-use warnings FATAL => 'all'; 
-use feature 'state','switch','signatures';  
-use namespace::autoclean; 
-
-use Term::ANSIColor; 
 use Moose::Role;  
-use MooseX::Types::Moose 'Str','ArrayRef','HashRef';  
+use Term::ANSIColor; 
+use namespace::autoclean; 
+use feature qw( state switch );   
+use experimental qw( signatures smartmatch );  
 
-no warnings 'experimental'; 
-
-# install basic PBS attributes and accessor 
 my @attributes = qw( name owner state queue nodes walltime elapsed init );  
-
 for my $attr ( @attributes ) { 
     has $attr, ( 
         is        => 'ro', 
-        isa       => HashRef[Str],  
+        isa       => 'HashRef[Str]',  
         traits    => [ 'Hash' ], 
         lazy      => 1, 
         init_arg  => undef, 
@@ -26,10 +19,9 @@ for my $attr ( @attributes ) {
     ); 
 }
 
-# colorized status headder 
 has 'header', ( 
     is        => 'ro', 
-    isa       => HashRef, 
+    isa       => 'HashRef', 
     traits    => [ 'Hash' ], 
     lazy      => 1, 
     init_arg  => undef, 
@@ -88,7 +80,6 @@ sub _build_header ( $self ) {
     return { 
         map { $_ => $self->color_header( $_ ) } $self->get_user_jobs 
     }  
-
 } 
 
 1 

@@ -1,21 +1,14 @@
 package PBS::Bookmark; 
 
-use strict; 
-use warnings FATAL => 'all'; 
-use feature 'signatures'; 
-use namespace::autoclean; 
-
+use Moose::Role;  
 use File::Find; 
 use Term::ANSIColor; 
-use Try::Tiny; 
-use Moose::Role;  
-use MooseX::Types::Moose 'HashRef'; 
-
-no warnings 'experimental';  
+use namespace::autoclean; 
+use experimental qw( signatures ); 
 
 has 'bookmark', ( 
     is        => 'ro', 
-    isa       => HashRef,  
+    isa       => 'HashRef',  
     lazy      => 1, 
     traits    => [ 'Hash' ], 
     init_arg  => undef, 
@@ -43,19 +36,19 @@ sub _build_bookmark ( $self ) {
     my %bookmark = ();  
 
     for my $job ( $self->get_user_jobs ) { 
-        try { 
-            my %mod_time = (); 
-            find( 
-                { wanted => 
-                    sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
+        $bookmark{$job} = ( 
+            $self->get_owner( $job ) eq $ENV{USER} ?  
+            do { 
+                my %mod_time = ();   
+                find { 
+                    wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
                     follow => $self->follow_symbolic 
-                }, $self->get_init( $job ) 
-            ); 
-            $bookmark{$job} = ( 
-                sort { $mod_time{$a} <=> $mod_time{$b} } 
-                keys %mod_time 
-            )[0] =~ s/\/OUTCAR//r; 
-        }; 
+                }, $self->get_init( $job );  
+                # trim OUTCAR from full path
+                ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
+            } : 
+            undef
+        )
     }
 
     return \%bookmark; 

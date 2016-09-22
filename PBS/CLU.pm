@@ -1,30 +1,25 @@
 package PBS::CLU;
 
-use strict; 
-use warnings FATAL => 'all'; 
-use feature 'signatures'; 
-use namespace::autoclean; 
-
 use Moose; 
-use MooseX::Types::Moose 'Bool','Str','ArrayRef';  
-use PBS::Types 'ID';  
+use namespace::autoclean; 
+use experimental qw( signatures );  
 
-no warnings 'experimental'; 
-
-with 'PBS::Qstat','PBS::Qdel','PBS::Status',  
-'PBS::Bootstrap','PBS::Bookmark',  
-'PBS::Prompt'; 
+with qw( 
+    PBS::Types
+    PBS::Qstat PBS::Qdel PBS::Status 
+    PBS::Bootstrap PBS::Bookmark PBS::Prompt  
+); 
 
 has 'user', ( 
     is        => 'ro', 
-    isa       => Str, 
+    isa       => 'Str', 
     lazy      => 1,
     default   => $ENV{USER}  
 ); 
 
 has 'job', ( 
     is        => 'ro', 
-    isa       => ArrayRef[ID],  
+    isa       => 'ArrayRef[ID]',  
     traits    => [ 'Array' ], 
     lazy      => 1, 
     predicate => 'has_job', 
@@ -35,7 +30,7 @@ has 'job', (
 
 has 'yes', ( 
     is        => 'rw', 
-    isa       => Bool, 
+    isa       => 'Bool', 
     lazy      => 1, 
     writer    => 'set_yes', 
     default   => 0 
@@ -43,7 +38,7 @@ has 'yes', (
 
 has 'format', ( 
     is        => 'rw', 
-    isa       => Str, 
+    isa       => 'Str', 
     lazy      => 1, 
     writer    => 'set_format', 
     default   => ''
@@ -51,7 +46,7 @@ has 'format', (
 
 has 'follow_symbolic', ( 
     is        => 'ro', 
-    isa       => Bool, 
+    isa       => 'Bool', 
     lazy      => 1, 
     default   => 0, 
 ); 

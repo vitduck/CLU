@@ -1,14 +1,12 @@
 #!/usr/bin/env perl 
 
 use strict; 
-use warnings FATAL => 'all'; 
-use feature 'switch';  
-
+use warnings;  
 use Getopt::Long; 
 use Pod::Usage; 
 use PBS::CLU;  
-
-no warnings 'experimental'; 
+use feature 'switch';  
+use experimental qw/smartmatch/; 
 
 # POD 
 my @usages = qw( NAME SYSNOPSIS OPTIONS );  
