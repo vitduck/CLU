@@ -1,12 +1,14 @@
 package PBS::Bookmark; 
 
 use Moose::Role;  
+use MooseX::Types::Moose qw( HashRef ); 
+
 use namespace::autoclean; 
 use experimental qw( signatures ); 
 
 has 'bookmark', ( 
     is        => 'ro', 
-    isa       => 'HashRef',  
+    isa       => HashRef,  
     lazy      => 1, 
     traits    => [ 'Hash' ], 
     init_arg  => undef, 

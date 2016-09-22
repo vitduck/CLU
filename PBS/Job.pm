@@ -1,8 +1,11 @@
 package PBS::Job; 
 
-use Moose::Role;  
-use Term::ANSIColor; 
 use File::Find; 
+use Term::ANSIColor; 
+
+use Moose::Role;  
+use MooseX::Types::Moose qw( Str HashRef ); 
+
 use namespace::autoclean; 
 use feature qw( state switch );   
 use experimental qw( signatures smartmatch );  
@@ -14,34 +17,34 @@ my @attributes = qw( name owner state queue nodes walltime elapsed init );
 for my $attr ( @attributes ) { 
     has $attr, ( 
         is        => 'ro', 
-        isa       => 'HashRef[Str]',  
+        isa       => HashRef[Str],  
         traits    => [ 'Hash' ], 
         lazy      => 1, 
         init_arg  => undef, 
-        default   => sub { return { map { $_->[0] => $_->[1]{$attr} } $_[0]->get_qstatf } }, 
-        handles   => { 'get_'.$attr => 'get' } 
+        default   => sub { return { map { $_->[0] => $_->[1]{$attr} } shift->get_qstatf } }, 
+        handles   => { 
+            'get_'.$attr => 'get' 
+        } 
     ); 
 }
 
 has 'header', ( 
     is        => 'ro', 
-    isa       => 'HashRef', 
+    isa       => HashRef, 
     traits    => [ 'Hash' ], 
     lazy      => 1, 
     init_arg  => undef, 
     builder   => '_build_header',  
-    handles   => { get_header => 'get' } 
+    handles   => { 
+        get_header => 'get' 
+    } 
 ); 
 
 sub color_header ( $self, $job ) { 
     given ( $self->get_state( $job ) ) {  
-        when ( /R/ ) { return colored($job, 'bold blue') } 
-        when ( /Q/ ) { return colored($job, 'bold red')  } 
-        default { 
-            # 'C' or 'E'
-
-            colored($job, 'green' ); 
-        } 
+        when ( /R/ ) { return colored( "< $job >", 'bold blue' ) } 
+        when ( /Q/ ) { return colored( "< $job >", 'bold red'  ) } 
+        default      { return colored( "< $job >", 'green' )     } 
     } 
 } 
 
@@ -68,9 +71,8 @@ sub print_qstat ( $self, $job ) {
 
 sub print_status ( $self, $job, $format = '' ) { 
     given ( $format ) {  
-        $self->print_status_oneline( $job ) when /oneline/; 
-
-        default { 
+        when ( /oneline/ ) { $self->print_status_oneline( $job ) } 
+        default            { 
             $self->print_header  ( $job ); 
             $self->print_qstat   ( $job );     
             $self->print_bookmark( $job )
@@ -87,20 +89,18 @@ sub print_status_oneline ( $self, $job ) {
         $self->get_init( $job )     =~ s/$ENV{HOME}/~/r; 
 
     printf
-        "%02d. %s (%s) %s\n", 
+        "%02d. %s ( %s ) %s\n", 
         ++$count, $self->get_header( $job ), $self->get_elapsed( $job ), $dir  
 } 
 
 sub _build_header ( $self ) { 
-    return { 
-        map { $_ => $self->color_header( $_ ) } $self->get_user_jobs 
-    }  
+    return { map { $_ => $self->color_header( $_ ) } $self->get_jobs }  
 } 
 
 sub _build_bootstrap ( $self ) { 
     my %bootstrap = (); 
 
-    for my $job ( $self->get_user_jobs ) { 
+    for my $job ( $self->get_jobs ) { 
         $bootstrap{$job} = (
             $self->get_owner( $job ) eq $ENV{USER} ?  
             ( grep { -d and /bootstrap-\d+/ } glob "${\$self->get_init( $job )}/*" )[0] :
@@ -114,7 +114,7 @@ sub _build_bootstrap ( $self ) {
 sub _build_bookmark ( $self ) { 
     my %bookmark = ();  
 
-    for my $job ( $self->get_user_jobs ) { 
+    for my $job ( $self->get_jobs ) { 
         $bookmark{$job} = ( 
             $self->get_owner( $job ) eq $ENV{USER} ?  
             do { 
@@ -135,24 +135,23 @@ sub _build_bookmark ( $self ) {
 
 sub _build_qstat ( $self ) { 
     my $qstat = {};  
-    my $pipe  = IO::Pipe->new(); 
+    my $pipe  = IO::Pipe->new->reader("qstat -f");  
 
-    $pipe->reader("qstat -f"); 
     while ( <$pipe> ) {  
-        if ( /Job Id: (.*)/ ) { 
+        if ( /Job Id: (\d+)\..*$/ ) { 
             my $id = $1; 
             $qstat->{$id} = {};  
             # use local version of $_ 
             while ( local $_ = <$pipe> ) {    
-                if    ( /job_name = (.*)/i )                { $qstat->{$id}{name}     = $1 } 
-                elsif ( /job_owner = (.*)@/i)               { $qstat->{$id}{owner}    = $1 }
-                elsif ( /server = (.*)/i )                  { $qstat->{$id}{server}   = $1 } 
-                elsif ( /job_state = (Q|R|C|E)/i )          { $qstat->{$id}{state}    = $1 } 
-                elsif ( /queue = (.*)/i )                   { $qstat->{$id}{queue}    = $1 } 
-                elsif ( /resource_list.nodes = (.*)/i )     { $qstat->{$id}{nodes}    = $1 } 
-                elsif ( /resource_list.walltime = (.*)/i  ) { $qstat->{$id}{walltime} = $1 } 
-                elsif ( /resources_used.walltime = (.*)/i ) { $qstat->{$id}{elapsed}  = $1 } 
-                elsif ( /init_work_dir = (.*)/i ) { 
+                /job_name = (.*)/i                ?  $qstat->{$id}{name}     = $1 : 
+                /job_owner = (.*)@/i              ?  $qstat->{$id}{owner}    = $1 :
+                /server = (.*)/i                  ?  $qstat->{$id}{server}   = $1 : 
+                /job_state = (Q|R|C|E)/i          ?  $qstat->{$id}{state}    = $1 : 
+                /queue = (.*)/i                   ?  $qstat->{$id}{queue}    = $1 : 
+                /resource_list.nodes = (.*)/i     ?  $qstat->{$id}{nodes}    = $1 : 
+                /resource_list.walltime = (.*)/i  ?  $qstat->{$id}{walltime} = $1 : 
+                /resources_used.walltime = (.*)/i ?  $qstat->{$id}{elapsed}  = $1 : 
+                /init_work_dir = (.*)/i           ?  do {  
                     $qstat->{$id}{init} = $1;  
 
                     # for broken line
@@ -164,14 +163,15 @@ sub _build_qstat ( $self ) {
                     $qstat->{$id}{elapsed} //= '---'; 
 
                     last 
-                }
+                } :  
+                next ; 
             }
         }
     }
+
     $pipe->close; 
 
     return $qstat; 
 } 
-
 
 1 

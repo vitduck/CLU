@@ -1,13 +1,16 @@
 package PBS::Bootstrap; 
 
-use Moose::Role;  
 use File::Path qw( rmtree );  
+
+use Moose::Role;  
+use MooseX::Types::Moose qw( HashRef ); 
+
 use namespace::autoclean; 
 use experimental qw( signatures ); 
 
 has 'bootstrap', ( 
     is        => 'ro', 
-    isa       => 'HashRef',  
+    isa       => HashRef,  
     lazy      => 1, 
     traits    => [ 'Hash' ], 
     init_arg  => undef, 

@@ -2,9 +2,11 @@
 
 use strict; 
 use warnings;  
+
 use Getopt::Long; 
 use Pod::Usage; 
 use PBS::CLU;  
+
 use feature qw( switch );  
 use experimental qw( smartmatch );  
 
@@ -76,8 +78,6 @@ my $mode = shift @ARGV // 'status';
 given ( $mode ) { 
     when ( /status/ ) { $pbs->status } 
     when ( /delete/ ) { $pbs->delete } 
-    when ( /reset/  ) { $pbs->reset } 
-    default { 
-        pod2usage( -verbose => 1 )
-    } 
+    when ( /reset/  ) { $pbs->reset  } 
+    default           { pod2usage( -verbose => 1 ) } 
 } 

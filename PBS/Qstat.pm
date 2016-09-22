@@ -1,15 +1,18 @@
 package PBS::Qstat; 
 
-use Moose::Role;  
 use IO::Pipe; 
+
+use Moose::Role;  
+use MooseX::Types::Moose qw( HashRef ); 
+
 use namespace::autoclean; 
 use experimental qw( signatures ); 
 
-requires '_build_qstat'; 
+requires qw( _build_qstat );  
 
 has '_qstat', ( 
     is       => 'ro', 
-    isa      => 'HashRef',  
+    isa      => HashRef,  
     traits   => [ 'Hash' ],
     lazy     => 1, 
     init_arg => undef,  
