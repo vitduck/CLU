@@ -1,14 +1,15 @@
 package PBS::CLU;
 
 use Moose; 
+use Moose::Util::TypeConstraints;
 use namespace::autoclean; 
 use experimental qw( signatures );  
 
-with qw( 
-    PBS::Types
-    PBS::Qstat PBS::Qdel PBS::Status 
-    PBS::Bootstrap PBS::Bookmark PBS::Prompt  
-); 
+with qw( PBS::Job ); 
+
+subtype ID 
+    => as 'Str' 
+    => where { /\d+(\.$ENV{HOSTNAME})?/ }; 
 
 has 'user', ( 
     is        => 'ro', 
@@ -57,7 +58,7 @@ sub BUILD ( $self, @ ) {
 
     # use private writer to filter jobs
     if  ( $self->has_job ) { 
-        $self->_set_job( [ grep $self->validate_job( $_ ), $self->get_user_jobs ] ) 
+        $self->_set_job( [ grep $self->isa_job( $_ ), $self->get_user_jobs ] ) 
     }
 } 
 
@@ -81,9 +82,16 @@ sub reset ( $self ) {
     for my $job ( $self->get_user_jobs ) {  
         $self->print_status( $job );   
         if ( $self->yes or $self->prompt('reset', $job) ) { 
-            $self->remove_bookmark( $job )
+            $self->delete_bookmark( $job )
         } 
     } 
+} 
+
+sub prompt ( $self, $method, $job ) { 
+    printf "\n=> %s %s ? y/s [n] ", ucfirst($method), $job;  
+    chomp ( my $reply = <STDIN> );  
+
+    return 1 if $reply =~ /y|yes/i 
 } 
 
 sub _build_job ( $self ) { 

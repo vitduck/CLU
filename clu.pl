@@ -5,8 +5,8 @@ use warnings;
 use Getopt::Long; 
 use Pod::Usage; 
 use PBS::CLU;  
-use feature 'switch';  
-use experimental qw/smartmatch/; 
+use feature qw( switch );  
+use experimental qw( smartmatch );  
 
 # POD 
 my @usages = qw( NAME SYSNOPSIS OPTIONS );  
@@ -55,7 +55,7 @@ GetOptions(
 ) or pod2usage(-verbose => 1); 
 
 # help message 
-if ( exists $option{help} ) { pod2usage(-verbose => 99, -section => \@usages) }  
+if ( exists $option{help} ) { pod2usage( -verbose => 99, -section => \@usages ) }  
 
 # default behaviors 
 my $pbs = ( 
