@@ -8,6 +8,8 @@ use MooseX::Types::Moose qw( HashRef );
 use namespace::autoclean; 
 use experimental qw( signatures ); 
 
+requires qw( _build_bootstrap ); 
+
 has 'bootstrap', ( 
     is        => 'ro', 
     isa       => HashRef,  
