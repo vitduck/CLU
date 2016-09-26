@@ -21,7 +21,7 @@ for my $attr ( @attributes ) {
         traits    => [ 'Hash' ], 
         lazy      => 1, 
         init_arg  => undef, 
-        default   => sub { return { map { $_->[0] => $_->[1]{$attr} } shift->get_qstatf } }, 
+        default   => sub { ( { map { $_->[0] => $_->[1]{$attr} } $_[0]->get_qstatf } ) }, 
         handles   => { 
             'get_'.$attr => 'get' 
         } 
@@ -34,7 +34,7 @@ has 'header', (
     traits    => [ 'Hash' ], 
     lazy      => 1, 
     init_arg  => undef, 
-    builder   => '_build_header',  
+    default   => sub { ( { map { $_ => $_[0]->color_header( $_ ) } $_[0]->get_jobs } ) }, 
     handles   => { 
         get_header => 'get' 
     } 
@@ -93,10 +93,6 @@ sub print_status_oneline ( $self, $job ) {
         ++$count, $self->get_header( $job ), $self->get_elapsed( $job ), $dir  
 } 
 
-sub _build_header ( $self ) { 
-    return { map { $_ => $self->color_header( $_ ) } $self->get_jobs }  
-} 
-
 sub _build_bootstrap ( $self ) { 
     my %bootstrap = (); 
 
@@ -133,45 +129,5 @@ sub _build_bookmark ( $self ) {
     return \%bookmark; 
 } 
 
-sub _build_qstat ( $self ) { 
-    my $qstat = {};  
-    my $pipe  = IO::Pipe->new->reader("qstat -f");  
-
-    while ( <$pipe> ) {  
-        if ( /Job Id: (\d+)\..*$/ ) { 
-            my $id = $1; 
-            $qstat->{$id} = {};  
-            # use local version of $_ 
-            while ( local $_ = <$pipe> ) {    
-                /job_name = (.*)/i                ?  $qstat->{$id}{name}     = $1 : 
-                /job_owner = (.*)@/i              ?  $qstat->{$id}{owner}    = $1 :
-                /server = (.*)/i                  ?  $qstat->{$id}{server}   = $1 : 
-                /job_state = (Q|R|C|E)/i          ?  $qstat->{$id}{state}    = $1 : 
-                /queue = (.*)/i                   ?  $qstat->{$id}{queue}    = $1 : 
-                /resource_list.nodes = (.*)/i     ?  $qstat->{$id}{nodes}    = $1 : 
-                /resource_list.walltime = (.*)/i  ?  $qstat->{$id}{walltime} = $1 : 
-                /resources_used.walltime = (.*)/i ?  $qstat->{$id}{elapsed}  = $1 : 
-                /init_work_dir = (.*)/i           ?  do {  
-                    $qstat->{$id}{init} = $1;  
-
-                    # for broken line
-                    chomp ( my $broken_line = <$pipe> );  
-                    $broken_line =~ s/^\s+//; 
-                    $qstat->{$id}{init} .= $broken_line; 
-
-                    # elapsed time can be undef if job has not started !  
-                    $qstat->{$id}{elapsed} //= '---'; 
-
-                    last 
-                } :  
-                next ; 
-            }
-        }
-    }
-
-    $pipe->close; 
-
-    return $qstat; 
-} 
 
 1 

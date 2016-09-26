@@ -1,5 +1,7 @@
 package PBS::Bookmark; 
 
+use File::Find; 
+
 use Moose::Role;  
 use MooseX::Types::Moose qw( HashRef ); 
 
