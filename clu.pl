@@ -20,7 +20,7 @@ clu.pl -- PBS job manager
 
 =head1 SYNOPSIS
 
-clu.pl -i JOB_ID -m status -f oneline
+clu.pl [status|delete|reset] -j <JOB_ID> -f <oneline> -y 
 
 =head1 OPTIONS
 
@@ -46,6 +46,10 @@ Format of status output, such as oneline
 
 Answer yes to all user prompts 
 
+=item B<-a, --all> 
+
+Apply operation to all users 
+
 =back 
 
 =cut
@@ -53,8 +57,8 @@ Answer yes to all user prompts
 # parse optional arguments 
 GetOptions(
     \ my %option, 
-    'help', 'job=s@{1,}', 'user=s', 'format=s', 'yes' 
-) or pod2usage(-verbose => 1); 
+    'help', 'job=s@{1,}', 'user=s', 'format=s', 'yes', 'all' 
+) or pod2usage( -verbose => 1 ); 
 
 # help message 
 if ( exists $option{help} ) { pod2usage( -verbose => 99, -section => \@usages ) }  
@@ -66,18 +70,19 @@ my $pbs = (
     PBS::CLU->new() 
 ); 
 
-# set yes to all prompt 
-$pbs->set_yes( exists $option{yes} ); 
+# logistic
+$pbs->set_yes if exists $option{yes} ;
+$pbs->set_all if exists $option{all}; 
 
-# set format of status 
-$pbs->set_format( $option{format} //= '' ); 
+# format 
+$pbs->set_format( $option{format} ) if exists $option{format}; 
 
 # switch 
 my $mode = shift @ARGV // 'status'; 
 
 given ( $mode ) { 
     when ( /status/ ) { $pbs->status } 
-    when ( /delete/ ) { $pbs->delete } 
-    when ( /reset/  ) { $pbs->reset  } 
+    when ( /delete/ ) { $pbs->delete_job } 
+    when ( /reset/  ) { $pbs->reset_job } 
     default           { pod2usage( -verbose => 1 ) } 
 } 

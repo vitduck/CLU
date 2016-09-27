@@ -3,14 +3,14 @@ package PBS::CLU;
 use File::Find; 
 
 use Moose; 
-use MooseX::Types::Moose qw( Bool Str ); 
+use MooseX::Types::Moose qw( Bool Str ArrayRef HashRef ); 
+use PBS::Types qw( ID ); 
 
 use namespace::autoclean; 
 use experimental qw( signatures );  
 
-with qw( PBS::Qstat PBS::Qdel ); 
-with qw( PBS::Bookmark PBS::Bootstrap ); 
 with qw( PBS::Job ); 
+with qw( PBS::Status ); 
 
 has 'user', ( 
     is        => 'ro', 
@@ -19,12 +19,39 @@ has 'user', (
     default   => $ENV{USER}  
 ); 
 
+has 'job', ( 
+    is        => 'ro', 
+    isa       => ArrayRef[ ID ],  
+    traits    => [ 'Array' ], 
+    lazy      => 1, 
+    predicate => 'has_job', 
+    writer    => '_set_job', 
+    builder   => '_build_job', 
+    handles  => { 
+        get_user_jobs => 'elements' 
+    }
+); 
+
 has 'yes', ( 
     is        => 'rw', 
     isa       => Bool, 
+    traits    => [ 'Bool' ], 
     lazy      => 1, 
-    writer    => 'set_yes', 
-    default   => 0 
+    default   => 0, 
+    handles   => { 
+        set_yes => 'set'
+    }
+); 
+
+has 'all', ( 
+    is        => 'rw', 
+    isa       => Bool, 
+    traits    => [ 'Bool' ], 
+    lazy      => 1, 
+    default   => 0,  
+    handles   => { 
+        set_all => 'set'
+    }
 ); 
 
 has 'format', ( 
@@ -35,46 +62,43 @@ has 'format', (
     default   => ''
 ); 
 
-has 'follow_symbolic', ( 
-    is        => 'ro', 
-    isa       => Bool, 
-    lazy      => 1, 
-    default   => 0, 
-); 
-
 sub BUILD ( $self, @ ) { 
+    # cache qstatf 
     $self->qstat; 
 
+    # strip $HOSTNAME from full ID
     if  ( $self->has_job ) { 
-        $self->_set_job( 
-            [ grep { $self->isa_job( $_ ) } map { s/(\d+).*$/$1/; $_ } $self->get_jobs ] 
-        ) 
+        $self->_set_job( [ 
+            grep { $self->isa_job( $_ ) } 
+            map { s/(\d+).*$/$1/; $_ } 
+            $self->get_user_jobs 
+        ] ) 
     }
 } 
 
 sub status ( $self ) { 
-    for my $job ( $self->get_jobs ) {  
+    for my $job ( $self->get_user_jobs ) {  
         $self->print_status( $job, $self->format )
     }
 } 
 
-sub delete ( $self ) { 
-    for my $job ( $self->get_jobs ) {  
+sub delete_job ( $self ) { 
+    for my $job ( $self->get_user_jobs ) {  
         $self->print_status( $job );   
 
         if ( $self->yes or $self->prompt('delete', $job) ) { 
-            $self->qdel( $job ); 
-            $self->delete_bootstrap( $job )
+            $self->delete( $job ); 
+            $self->clean( $job )
         }
     } 
 } 
 
-sub reset ( $self ) { 
-    for my $job ( $self->get_jobs ) {  
+sub reset_job ( $self ) { 
+    for my $job ( $self->get_user_jobs ) {  
         $self->print_status( $job );   
 
         if ( $self->yes or $self->prompt('reset', $job) ) { 
-            $self->delete_bookmark( $job )
+            $self->reset( $job )
         } 
     } 
 } 
@@ -86,84 +110,15 @@ sub prompt ( $self, $method, $job ) {
     return 1 if $reply =~ /y|yes/i 
 } 
 
-# PBS::Qstat 
-sub _build_qstat ( $self ) { 
-    my $qstat = {};  
-    my $pipe  = IO::Pipe->new->reader("qstat -f");  
+# native
+sub _build_job ( $self ) { 
+    my @jobs = sort { $a <=> $b } $self->get_jobs; 
 
-    while ( <$pipe> ) {  
-        if ( /Job Id: (\d+)\..*$/ ) { 
-            my $id = $1; 
-            $qstat->{$id} = {};  
-            # use local version of $_ 
-            while ( local $_ = <$pipe> ) {    
-                /job_name = (.*)/i                ?  $qstat->{$id}{name}     = $1 : 
-                /job_owner = (.*)@/i              ?  $qstat->{$id}{owner}    = $1 :
-                /server = (.*)/i                  ?  $qstat->{$id}{server}   = $1 : 
-                /job_state = (Q|R|C|E)/i          ?  $qstat->{$id}{state}    = $1 : 
-                /queue = (.*)/i                   ?  $qstat->{$id}{queue}    = $1 : 
-                /resource_list.nodes = (.*)/i     ?  $qstat->{$id}{nodes}    = $1 : 
-                /resource_list.walltime = (.*)/i  ?  $qstat->{$id}{walltime} = $1 : 
-                /resources_used.walltime = (.*)/i ?  $qstat->{$id}{elapsed}  = $1 : 
-                /init_work_dir = (.*)/i           ?  do {  
-                    $qstat->{$id}{init} = $1;  
-
-                    # for broken line
-                    chomp ( my $broken_line = <$pipe> );  
-                    $broken_line =~ s/^\s+//; 
-                    $qstat->{$id}{init} .= $broken_line; 
-
-                    # elapsed time can be undef if job has not started !  
-                    $qstat->{$id}{elapsed} //= '---'; 
-
-                    last 
-                } :  
-                next ; 
-            }
-        }
-    }
-
-    $pipe->close; 
-
-    return $qstat; 
-} 
-
-# PBS::Bootstrap 
-sub _build_bootstrap ( $self ) { 
-    my %bootstrap = (); 
-
-    for my $job ( $self->get_jobs ) { 
-        $bootstrap{$job} = (
-            $self->get_owner( $job ) eq $ENV{USER} ?  
-            ( grep { -d and /bootstrap-\d+/ } glob "${\$self->get_init( $job )}/*" )[0] :
-            undef
-        )
-    }
-
-    return \%bootstrap
-} 
-
-# PBS::Bookmark 
-sub _build_bookmark ( $self ) { 
-    my %bookmark = ();  
-
-    for my $job ( $self->get_jobs ) { 
-        $bookmark{$job} = ( 
-            $self->get_owner( $job ) eq $ENV{USER} ?  
-            do { 
-                my %mod_time = ();   
-                find { 
-                    wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
-                    follow => $self->follow_symbolic 
-                }, $self->get_init( $job );  
-                # trim OUTCAR from full path
-                ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
-            } : 
-            undef
-        )
-    }
-
-    return \%bookmark; 
+    return [ 
+        $self->all
+        ? @jobs          
+        : grep $self->get_owner( $_) eq $self->user, @jobs 
+    ]
 } 
 
 __PACKAGE__->meta->make_immutable;
