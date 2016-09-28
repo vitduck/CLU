@@ -1,32 +1,33 @@
 package PBS::CLU;
 
-use File::Find; 
-
 use Moose; 
-use MooseX::Types::Moose qw( Bool Str ArrayRef HashRef ); 
+use MooseX::Types::Moose qw( Bool Str ArrayRef HashRef );  
+use namespace::autoclean; 
+
+use File::Find; 
 use PBS::Types qw( ID ); 
 
-use namespace::autoclean; 
-use experimental qw( signatures );  
+use experimental qw( signatures );   
 
-with qw( PBS::Job ); 
-with qw( PBS::Status ); 
+with qw( PBS::Job );  
+with qw( PBS::Status );  
 
 has 'user', ( 
     is        => 'ro', 
     isa       => Str, 
     lazy      => 1,
-    default   => $ENV{USER}  
+    default   => $ENV{ USER }  
 ); 
 
 has 'job', ( 
     is        => 'ro', 
     isa       => ArrayRef[ ID ],  
-    traits    => [ 'Array' ], 
+    traits    => [ qw( Array ) ], 
     lazy      => 1, 
     predicate => 'has_job', 
     writer    => '_set_job', 
     builder   => '_build_job', 
+
     handles  => { 
         get_user_jobs => 'elements' 
     }
@@ -35,9 +36,10 @@ has 'job', (
 has 'yes', ( 
     is        => 'rw', 
     isa       => Bool, 
-    traits    => [ 'Bool' ], 
+    traits    => [ qw( Bool ) ], 
     lazy      => 1, 
     default   => 0, 
+
     handles   => { 
         set_yes => 'set'
     }
@@ -46,9 +48,10 @@ has 'yes', (
 has 'all', ( 
     is        => 'rw', 
     isa       => Bool, 
-    traits    => [ 'Bool' ], 
+    traits    => [ qw( Bool ) ], 
     lazy      => 1, 
     default   => 0,  
+
     handles   => { 
         set_all => 'set'
     }
@@ -63,11 +66,10 @@ has 'format', (
 ); 
 
 sub BUILD ( $self, @ ) { 
-    # cache qstatf 
     $self->qstat; 
 
     # strip $HOSTNAME from full ID
-    if  ( $self->has_job ) { 
+    if ( $self->has_job ) { 
         $self->_set_job( [ 
             grep { $self->isa_job( $_ ) } 
             map { s/(\d+).*$/$1/; $_ } 
@@ -86,7 +88,7 @@ sub delete_job ( $self ) {
     for my $job ( $self->get_user_jobs ) {  
         $self->print_status( $job );   
 
-        if ( $self->yes or $self->prompt('delete', $job) ) { 
+        if ( $self->yes or $self->prompt( 'delete', $job ) ) { 
             $self->delete( $job ); 
             $self->clean( $job )
         }
@@ -97,14 +99,14 @@ sub reset_job ( $self ) {
     for my $job ( $self->get_user_jobs ) {  
         $self->print_status( $job );   
 
-        if ( $self->yes or $self->prompt('reset', $job) ) { 
+        if ( $self->yes or $self->prompt( 'reset', $job ) ) { 
             $self->reset( $job )
         } 
     } 
 } 
 
 sub prompt ( $self, $method, $job ) { 
-    printf "\n=> %s %s ? y/s [n] ", ucfirst($method), $job;  
+    printf "\n=> %s %s ? y/s [n] ", ucfirst( $method ), $job;  
     chomp ( my $reply = <STDIN> );  
 
     return 1 if $reply =~ /y|yes/i 

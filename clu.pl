@@ -61,21 +61,21 @@ GetOptions(
 ) or pod2usage( -verbose => 1 ); 
 
 # help message 
-if ( exists $option{help} ) { pod2usage( -verbose => 99, -section => \@usages ) }  
+if ( exists $option{ help } ) { pod2usage( -verbose => 99, -section => \@usages ) }  
 
 # default behaviors 
 my $pbs = ( 
-    exists $option{user} ? PBS::CLU->new( user => $option{user} ) :  
-    exists $option{job}  ? PBS::CLU->new( job  => $option{job}  ) :   
+    exists $option{ user} ? PBS::CLU->new( user => $option{ user } ) :  
+    exists $option{ job}  ? PBS::CLU->new( job  => $option{ job } )  :   
     PBS::CLU->new() 
 ); 
 
 # logistic
-$pbs->set_yes if exists $option{yes} ;
-$pbs->set_all if exists $option{all}; 
+$pbs->set_yes if exists $option{ yes } ;
+$pbs->set_all if exists $option{ all }; 
 
 # format 
-$pbs->set_format( $option{format} ) if exists $option{format}; 
+$pbs->set_format( $option{ format } ) if exists $option{ format }; 
 
 # switch 
 my $mode = shift @ARGV // 'status'; 

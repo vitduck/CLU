@@ -2,36 +2,37 @@ package PBS::Job;
 
 use autodie; 
 
+use Moose::Role;  
+use MooseX::Types::Moose qw( Undef Bool Str HashRef );  
+use namespace::autoclean; 
 use IO::Pipe; 
 use File::Find; 
-use File::Path qw( rmtree ); 
+use File::Path qw( rmtree );  
 
-use Moose::Role;  
-use MooseX::Types::Moose qw( Undef Bool Str HashRef ); 
-
-use feature qw( switch ); 
-use namespace::autoclean; 
-use experimental qw( signatures smartmatch ); 
+use feature qw( switch );  
+use experimental qw( signatures smartmatch );  
 
 # PBS status 
-my @pbs_status = qw( 
+my @pbs_status = qw(  
     owner
     name state 
     queue nodes 
     walltime elapsed 
     init bootstrap bookmark 
-); 
+);  
 
 for my $attr ( @pbs_status ) {
     has $attr, ( 
         is        => 'ro', 
         isa       => HashRef[ Str | Undef ],  
-        traits    => [ 'Hash' ], 
+        traits    => [ qw( Hash ) ], 
         lazy      => 1, 
         init_arg  => undef, 
 
         default   => sub ( $self ) { 
-            return { map { $_->[0] => $_->[1]{$attr} } $self->get_qstatf } 
+            return { 
+                map { $_->[ 0 ] => $_->[ 1 ]{ $attr } } $self->get_qstatf 
+            } 
         }, 
 
         handles   => { 
@@ -45,10 +46,11 @@ for my $attr ( @pbs_status ) {
 has 'qstat', ( 
     is       => 'ro', 
     isa      => HashRef,  
-    traits   => [ 'Hash' ],
+    traits   => [ qw( Hash ) ],
     lazy     => 1, 
     init_arg => undef,  
     builder  => '_build_qstat', 
+
     handles  => { 
         isa_job    => 'exists',  
         get_jobs   => 'keys', 
@@ -70,13 +72,14 @@ sub print_bookmark ( $self, $job ) {
         my $init     = $self->get_init( $job ); 
         my $bookmark = $self->get_bookmark( $job ) =~ s/$init\///r; 
 
-        printf "%-9s=> %s\n", ucfirst('bookmark'), $bookmark          
+        printf "%-9s=> %s\n", ucfirst( 'bookmark' ), $bookmark          
     }
 } 
 
-sub print_pbs_status ( $self, $attr, $job, $trim = 0 ) { 
+sub print_pbs_status ( $self, $attr, $job ) { 
     my $reader = 'get_'.$attr;  
-    printf "%-9s=> %s\n", ucfirst($attr), $self->$reader( $job );  
+
+    printf "%-9s=> %s\n", ucfirst( $attr ), $self->$reader( $job );  
 } 
 
 sub print_qstat ( $self, $job ) { 
@@ -92,7 +95,7 @@ sub delete( $self, $job ) {
 } 
 
 sub reset( $self, $job ) { 
-    unlink join '/', $self->get_bookmark( $job), 'OUTCAR' if  $self->has_bookmark( $job )
+    unlink join '/', $self->get_bookmark( $job), 'OUTCAR' if $self->has_bookmark( $job )
 } 
 
 sub clean( $self, $job  ) { 
@@ -101,14 +104,14 @@ sub clean( $self, $job  ) {
 
 sub _set_bootstrap ( $self, $owner, $init ) { 
     return 
-       $owner eq $ENV{USER} 
-       ? ( grep { -d and /bootstrap-\d+/ } glob "$init/*" )[0] 
+       $owner eq $ENV{ USER } 
+       ? ( grep { -d and /bootstrap-\d+/ } glob "$init/*" )[ 0 ] 
        : undef
 } 
 
 sub _set_bookmark ( $self, $owner, $init ) { 
     return 
-        $owner eq $ENV{USER} 
+        $owner eq $ENV{ USER } 
         ? do { 
             my %mod_time = ();   
             find { 
@@ -116,7 +119,7 @@ sub _set_bookmark ( $self, $owner, $init ) {
                 follow => $self->follow_symbolic 
             }, $init; 
 
-            ( sort { $mod_time{$a} <=> $mod_time{$b} } keys %mod_time )[0] =~  s/\/OUTCAR//r }
+            ( sort { $mod_time{ $a } <=> $mod_time{ $b } } keys %mod_time )[ 0 ] =~  s/\/OUTCAR//r }
         : undef
 } 
 
@@ -127,38 +130,42 @@ sub _build_qstat ( $self ) {
     while ( <$pipe> ) {  
         if ( /Job Id: (\d+)\..*$/ ) { 
             my $id = $1; 
-            $qstat->{$id} = {};  
+            $qstat->{ $id } = {};  
 
             # basic PBS status 
             while ( local $_ = <$pipe> ) {    
-                /job_name = (.*)/i                ?  $qstat->{$id}{name}     = $1 : 
-                /job_owner = (.*)@/i              ?  $qstat->{$id}{owner}    = $1 :
-                /server = (.*)/i                  ?  $qstat->{$id}{server}   = $1 : 
-                /job_state = (Q|R|C|E)/i          ?  $qstat->{$id}{state}    = $1 : 
-                /queue = (.*)/i                   ?  $qstat->{$id}{queue}    = $1 : 
-                /resource_list.nodes = (.*)/i     ?  $qstat->{$id}{nodes}    = $1 : 
-                /resource_list.walltime = (.*)/i  ?  $qstat->{$id}{walltime} = $1 : 
-                /resources_used.walltime = (.*)/i ?  $qstat->{$id}{elapsed}  = $1 : 
-                /init_work_dir = (.*)/i           ?  do {  
-                    $qstat->{$id}{init} = $1;  
+                /job_name = (.*)/i                ?  $qstat->{ $id }{ name }     = $1 : 
+                /job_owner = (.*)@/i              ?  $qstat->{ $id }{ owner }    = $1 :
+                /server = (.*)/i                  ?  $qstat->{ $id }{ server }   = $1 : 
+                /job_state = (Q|R|C|E)/i          ?  $qstat->{ $id }{ state }    = $1 : 
+                /queue = (.*)/i                   ?  $qstat->{ $id }{ queue }    = $1 : 
+                /resource_list.nodes = (.*)/i     ?  $qstat->{ $id }{ nodes }    = $1 : 
+                /resource_list.walltime = (.*)/i  ?  $qstat->{ $id }{ walltime } = $1 : 
+                /resources_used.walltime = (.*)/i ?  $qstat->{ $id }{ elapsed }  = $1 : 
+                /init_work_dir = (.*)/i           ?  
+                    do {  
+                        $qstat->{ $id }{ init } = $1;  
 
-                    # for broken line
-                    chomp ( my $broken_line = <$pipe> );  
-                    $broken_line =~ s/^\s+//; 
-                    $qstat->{$id}{init} .= $broken_line; 
+                        # for broken line
+                        chomp ( my $broken_line = <$pipe> );  
+                        $broken_line =~ s/^\s+//; 
+                        $qstat->{ $id }{ init } .= $broken_line; 
 
-                    # elapsed time can be undef if job has not started !  
-                    $qstat->{$id}{elapsed} //= '---'; 
+                        # elapsed time can be undef if job has not started !  
+                        $qstat->{ $id }{ elapsed } //= '---'; 
 
-                    last }  
-                : next ; 
+                        last 
+                    }  
+                : next  
             }
 
-            $qstat->{$id}{bootstrap} = 
-                $self->_set_bootstrap( $qstat->{$id}->@{qw( owner init )} ); 
+            $qstat->{ $id }{ bootstrap } = $self->_set_bootstrap( 
+                $qstat->{ $id }->@{ qw( owner init ) } 
+            ); 
 
-            $qstat->{$id}{bookmark} = 
-                $self->_set_bookmark( $qstat->{$id}->@{qw( owner init )} ); 
+            $qstat->{ $id }{ bookmark } = $self->_set_bookmark( 
+                $qstat->{ $id }->@{ qw(owner init ) } 
+            ); 
         }
     }
         
