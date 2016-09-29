@@ -9,23 +9,6 @@ use Term::ANSIColor;
 use feature qw( state switch );  
 use experimental qw( signatures smartmatch );  
 
-requires qw( print_qstat );  
-requires qw( has_bookmark get_bookmark );  
-requires qw( get_owner get_state get_init get_elapsed );  
-
-has 'header', ( 
-    is        => 'ro', 
-    isa       => HashRef, 
-    traits    => [ qw( Hash ) ], 
-    lazy      => 1, 
-    init_arg  => undef, 
-    builder   => '_build_header', 
-
-    handles   => { 
-        get_header => 'get' 
-    } 
-); 
-
 sub print_header ( $self, $job ) { 
     printf "\n%s\n", $self->color_header( $job ); 
 }
