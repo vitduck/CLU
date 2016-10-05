@@ -1,14 +1,13 @@
 package PBS::Job; 
 
-use autodie; 
-
 use Moose::Role;  
 use MooseX::Types::Moose qw( Undef Bool Str HashRef );  
-use namespace::autoclean; 
+
 use IO::Pipe; 
 use File::Find; 
 use File::Path qw( rmtree );  
 
+use namespace::autoclean; 
 use feature qw( switch );  
 use experimental qw( signatures smartmatch );  
 
@@ -62,6 +61,8 @@ has 'follow_symbolic', (
     is        => 'ro', 
     isa       => Bool, 
     lazy      => 1, 
+    init_arg  => undef,
+    reader    => 'follow_symbolic', 
     default   => 0, 
 ); 
 

@@ -2,90 +2,91 @@ package PBS::CLU;
 
 use Moose; 
 use MooseX::Types::Moose qw( Bool Str ArrayRef HashRef );  
-use namespace::autoclean; 
-
-use File::Find; 
 use PBS::Types qw( ID ); 
 
+use File::Find; 
+
+use namespace::autoclean; 
 use experimental qw( signatures );   
 
-with qw( PBS::Job );  
-with qw( PBS::Status );  
+with qw( MooseX::Getopt::Usage );  
+with qw( PBS::Job PBS::Status );  
 
 has 'user', ( 
     is        => 'ro', 
     isa       => Str, 
     lazy      => 1,
-    default   => $ENV{ USER }  
+    default   => $ENV{ USER },   
+
+    documentation => "Owner of jobs"
 ); 
 
 has 'job', ( 
     is        => 'ro', 
-    isa       => ArrayRef[ ID ],  
-    traits    => [ qw( Array ) ], 
-    lazy      => 1, 
+    isa       => Str, 
     predicate => 'has_job', 
-    writer    => '_set_job', 
-    builder   => '_build_job', 
 
-    handles  => { 
-        get_user_jobs => 'elements' 
-    }
-); 
-
-has 'yes', ( 
-    is        => 'rw', 
-    isa       => Bool, 
-    traits    => [ qw( Bool ) ], 
-    lazy      => 1, 
-    default   => 0, 
-
-    handles   => { 
-        set_yes => 'set'
-    }
-); 
-
-has 'all', ( 
-    is        => 'rw', 
-    isa       => Bool, 
-    traits    => [ qw( Bool ) ], 
-    lazy      => 1, 
-    default   => 0,  
-
-    handles   => { 
-        set_all => 'set'
-    }
+    documentation => "Comma separated list of jobs"
 ); 
 
 has 'format', ( 
     is        => 'rw', 
     isa       => Str, 
     lazy      => 1, 
-    writer    => 'set_format', 
-    default   => ''
+    default   => 'verbose',  
+    
+    documentation => 'Status format'
+); 
+
+has 'yes', ( 
+    is        => 'rw', 
+    isa       => Bool, 
+    lazy      => 1, 
+    default   => 0, 
+
+    documentation => "Answer yes to all user prompts"
+); 
+
+has 'all', ( 
+    is        => 'rw', 
+    isa       => Bool, 
+    lazy      => 1, 
+    default   => 0,  
+
+    documentation => "Apply operation to all users"
+); 
+
+has 'job_list', ( 
+    is        => 'ro', 
+    isa       => ArrayRef,  
+    traits    => [ qw( Array ) ], 
+    lazy      => 1, 
+    init_arg  => undef,  
+    builder   => '_build_job_list', 
+    handles   => { 
+        get_job_list => 'elements' 
+    }, 
 ); 
 
 sub BUILD ( $self, @ ) { 
+    # cache the output of qstat 
     $self->qstat; 
-
-    # strip $HOSTNAME from full ID
-    if ( $self->has_job ) { 
-        $self->_set_job( [ 
-            grep { $self->isa_job( $_ ) } 
-            map { s/(\d+).*$/$1/; $_ } 
-            $self->get_user_jobs 
-        ] ) 
-    }
 } 
 
+sub getopt_usage_config {
+    return 
+        format   => "Usage: %c <status|delete|reset> [OPTIONS]", 
+        headings => 1
+}
+
 sub status ( $self ) { 
-    for my $job ( $self->get_user_jobs ) {  
+    for my $job ( $self->get_job_list ) {  
         $self->print_status( $job, $self->format )
     }
 } 
 
 sub delete_job ( $self ) { 
-    for my $job ( $self->get_user_jobs ) {  
+    for my $job ( $self->get_job_list ) {  
         $self->print_status( $job );   
 
         if ( $self->yes or $self->prompt( 'delete', $job ) ) { 
@@ -96,7 +97,7 @@ sub delete_job ( $self ) {
 } 
 
 sub reset_job ( $self ) { 
-    for my $job ( $self->get_user_jobs ) {  
+    for my $job ( $self->get_job_list ) {  
         $self->print_status( $job );   
 
         if ( $self->yes or $self->prompt( 'reset', $job ) ) { 
@@ -113,13 +114,22 @@ sub prompt ( $self, $method, $job ) {
 } 
 
 # native
-sub _build_job ( $self ) { 
-    my @jobs = sort { $a <=> $b } $self->get_jobs; 
-
-    return [ 
-        $self->all
-        ? @jobs          
-        : grep $self->get_owner( $_) eq $self->user, @jobs 
+sub _build_job_list ( $self ) { 
+    return [
+        $self->has_job 
+        ? do {  
+            grep { $self->isa_job( $_ ) }   # check from cached 
+            map { s/(\d+).*$/$1/; $_ }      # strip the hostname 
+            split /,/, $self->job           # turn string to list 
+        }
+        : do { 
+            my @jobs = sort { $a <=> $b } $self->get_jobs; 
+            
+            # return all job if --all is set
+            $self->all
+            ? @jobs          
+            : grep $self->get_owner( $_) eq $self->user, @jobs 
+        }
     ]
 } 
 

@@ -2,10 +2,10 @@ package PBS::Status;
 
 use Moose::Role;  
 use MooseX::Types::Moose qw( HashRef ); 
-use namespace::autoclean; 
 
 use Term::ANSIColor; 
 
+use namespace::autoclean; 
 use feature qw( state switch );  
 use experimental qw( signatures smartmatch );  
 
@@ -13,7 +13,7 @@ sub print_header ( $self, $job ) {
     printf "\n%s\n", $self->color_header( $job ); 
 }
 
-sub print_status ( $self, $job, $format = '' ) { 
+sub print_status ( $self, $job, $format = 'verbose' ) { 
     given ( $format ) {  
         when ( /oneline/ ) { $self->print_status_oneline( $job ) } 
         default            { $self->print_header( $job ); $self->print_qstat( $job ) }  
