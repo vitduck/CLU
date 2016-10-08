@@ -2,23 +2,14 @@ package PBS::Job;
 
 use Moose::Role;  
 use MooseX::Types::Moose qw( Undef Bool Str HashRef );  
-
 use IO::Pipe; 
 use File::Find; 
 use File::Path qw( rmtree );  
-
 use namespace::autoclean; 
 use feature qw( switch );  
 use experimental qw( signatures smartmatch );  
 
-# PBS status 
-my @pbs_status = qw(  
-    owner
-    name state 
-    queue nodes 
-    walltime elapsed 
-    init bootstrap bookmark 
-);  
+my @pbs_status = qw( owner name state queue nodes walltime elapsed init bootstrap bookmark );  
 
 for my $attr ( @pbs_status ) {
     has $attr, ( 
@@ -27,13 +18,9 @@ for my $attr ( @pbs_status ) {
         traits    => [ qw( Hash ) ], 
         lazy      => 1, 
         init_arg  => undef, 
-
         default   => sub ( $self ) { 
-            return { 
-                map { $_->[ 0 ] => $_->[ 1 ]{ $attr } } $self->get_qstatf 
-            } 
+            return { map { $_->[0] => $_->[1]{$attr} } $self->get_qstatf } 
         }, 
-
         handles   => { 
             'has_'.$attr => 'defined', 
             'get_'.$attr => 'get' 
@@ -41,7 +28,6 @@ for my $attr ( @pbs_status ) {
     ); 
 }
 
-# parse qstat -f 
 has 'qstat', ( 
     is       => 'ro', 
     isa      => HashRef,  
@@ -62,11 +48,9 @@ has 'follow_symbolic', (
     isa       => Bool, 
     lazy      => 1, 
     init_arg  => undef,
-    reader    => 'follow_symbolic', 
     default   => 0, 
 ); 
 
-# method 
 sub print_bookmark ( $self, $job ) { 
     if ( $self->has_bookmark( $job ) ) {  
         # trim the leading path 
@@ -91,23 +75,23 @@ sub print_qstat ( $self, $job ) {
     }
 }  
 
-sub delete( $self, $job ) { 
+sub delete ( $self, $job ) { 
     system 'qdel', $job;  
 } 
 
-sub reset( $self, $job ) { 
+sub reset ( $self, $job ) { 
     unlink join '/', $self->get_bookmark( $job), 'OUTCAR' if $self->has_bookmark( $job )
 } 
 
-sub clean( $self, $job  ) { 
+sub clean ( $self, $job  ) { 
     rmtree $self->get_bootstrap( $job ) if $self->has_bootstrap( $job ) 
 }
 
 sub _set_bootstrap ( $self, $owner, $init ) { 
     return 
-       $owner eq $ENV{ USER } 
-       ? ( grep { -d and /bootstrap-\d+/ } glob "$init/*" )[ 0 ] 
-       : undef
+        $owner eq $ENV{ USER } 
+        ? ( grep { -d and /bootstrap-\d+/ } glob "$init/*" )[ 0 ]
+        : undef
 } 
 
 sub _set_bookmark ( $self, $owner, $init ) { 
@@ -115,12 +99,14 @@ sub _set_bookmark ( $self, $owner, $init ) {
         $owner eq $ENV{ USER } 
         ? do { 
             my %mod_time = ();   
+
             find { 
                 wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
                 follow => $self->follow_symbolic 
             }, $init; 
 
-            ( sort { $mod_time{ $a } <=> $mod_time{ $b } } keys %mod_time )[ 0 ] =~  s/\/OUTCAR//r }
+            ( sort { $mod_time{ $a } <=> $mod_time{ $b } } keys %mod_time )[ 0 ] =~  s/\/OUTCAR//r 
+        } 
         : undef
 } 
 
@@ -143,30 +129,27 @@ sub _build_qstat ( $self ) {
                 /resource_list.nodes = (.*)/i     ?  $qstat->{ $id }{ nodes }    = $1 : 
                 /resource_list.walltime = (.*)/i  ?  $qstat->{ $id }{ walltime } = $1 : 
                 /resources_used.walltime = (.*)/i ?  $qstat->{ $id }{ elapsed }  = $1 : 
-                /init_work_dir = (.*)/i           ?  
-                    do {  
-                        $qstat->{ $id }{ init } = $1;  
+                /init_work_dir = (.*)/i           ?  do {  
+                    $qstat->{ $id }{ init } = $1;  
 
-                        # for broken line
-                        chomp ( my $broken_line = <$pipe> );  
-                        $broken_line =~ s/^\s+//; 
-                        $qstat->{ $id }{ init } .= $broken_line; 
+                    # for broken line
+                    chomp ( my $broken_line = <$pipe> );  
+                    $broken_line =~ s/^\s+//; 
+                    $qstat->{ $id }{ init } .= $broken_line; 
 
-                        # elapsed time can be undef if job has not started !  
-                        $qstat->{ $id }{ elapsed } //= '---'; 
+                    # elapsed time can be undef if job has not started !  
+                    $qstat->{ $id }{ elapsed } //= '---'; 
 
-                        last 
-                    }  
+                    last 
+                }  
                 : next  
             }
 
-            $qstat->{ $id }{ bootstrap } = $self->_set_bootstrap( 
-                $qstat->{ $id }->@{ qw( owner init ) } 
-            ); 
+            $qstat->{ $id }{ bootstrap } = 
+                $self->_set_bootstrap( $qstat->{ $id }->@{ qw( owner init ) } ); 
 
-            $qstat->{ $id }{ bookmark } = $self->_set_bookmark( 
-                $qstat->{ $id }->@{ qw(owner init ) } 
-            ); 
+            $qstat->{ $id }{ bookmark } = 
+                $self->_set_bookmark( $qstat->{ $id }->@{ qw(owner init ) } ); 
         }
     }
         

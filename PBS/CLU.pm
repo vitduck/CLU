@@ -3,9 +3,7 @@ package PBS::CLU;
 use Moose; 
 use MooseX::Types::Moose qw( Bool Str ArrayRef HashRef );  
 use PBS::Types qw( ID ); 
-
 use File::Find; 
-
 use namespace::autoclean; 
 use experimental qw( signatures );   
 
@@ -69,11 +67,10 @@ has 'job_list', (
 ); 
 
 sub BUILD ( $self, @ ) { 
-    # cache the output of qstat 
     $self->qstat; 
 } 
 
-sub getopt_usage_config {
+sub getopt_usage_config ( $self ) {
     return 
         format   => "Usage: %c <status|delete|reset> [OPTIONS]", 
         headings => 1

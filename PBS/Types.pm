@@ -1,4 +1,4 @@
-#!/usr/bin/env perl 
+package PBS::Types; 
 
 use strict; 
 use warnings; 
