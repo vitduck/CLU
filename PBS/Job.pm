@@ -15,7 +15,7 @@ for my $attr ( @pbs_status ) {
     has $attr, ( 
         is        => 'ro', 
         isa       => HashRef[ Str | Undef ],  
-        traits    => [ qw( Hash ) ], 
+        traits    => [ 'Hash' ], 
         lazy      => 1, 
         init_arg  => undef, 
         default   => sub ( $self ) { 
@@ -31,11 +31,10 @@ for my $attr ( @pbs_status ) {
 has 'qstat', ( 
     is       => 'ro', 
     isa      => HashRef,  
-    traits   => [ qw( Hash ) ],
+    traits   => [ 'Hash' ],
     lazy     => 1, 
     init_arg => undef,  
     builder  => '_build_qstat', 
-
     handles  => { 
         isa_job    => 'exists',  
         get_jobs   => 'keys', 
@@ -90,7 +89,7 @@ sub clean ( $self, $job  ) {
 sub _set_bootstrap ( $self, $owner, $init ) { 
     return 
         $owner eq $ENV{ USER } 
-        ? ( grep { -d and /bootstrap-\d+/ } glob "$init/*" )[ 0 ]
+        ? ( grep { -d and /bootstrap-\d+/ } glob "$init/*" )[0]
         : undef
 } 
 
@@ -105,7 +104,7 @@ sub _set_bookmark ( $self, $owner, $init ) {
                 follow => $self->follow_symbolic 
             }, $init; 
 
-            ( sort { $mod_time{ $a } <=> $mod_time{ $b } } keys %mod_time )[ 0 ] =~  s/\/OUTCAR//r 
+            ( sort { $mod_time{ $a } <=> $mod_time{ $b } } keys %mod_time )[0] =~  s/\/OUTCAR//r 
         } 
         : undef
 } 
@@ -121,15 +120,15 @@ sub _build_qstat ( $self ) {
 
             # basic PBS status 
             while ( local $_ = <$pipe> ) {    
-                /job_name = (.*)/i                ?  $qstat->{ $id }{ name }     = $1 : 
-                /job_owner = (.*)@/i              ?  $qstat->{ $id }{ owner }    = $1 :
-                /server = (.*)/i                  ?  $qstat->{ $id }{ server }   = $1 : 
-                /job_state = (Q|R|C|E)/i          ?  $qstat->{ $id }{ state }    = $1 : 
-                /queue = (.*)/i                   ?  $qstat->{ $id }{ queue }    = $1 : 
-                /resource_list.nodes = (.*)/i     ?  $qstat->{ $id }{ nodes }    = $1 : 
-                /resource_list.walltime = (.*)/i  ?  $qstat->{ $id }{ walltime } = $1 : 
-                /resources_used.walltime = (.*)/i ?  $qstat->{ $id }{ elapsed }  = $1 : 
-                /init_work_dir = (.*)/i           ?  do {  
+                if    ( /job_name = (.*)/i )                { $qstat->{ $id }{ name }      = $1 } 
+                elsif ( /job_owner = (.*)@/i )              { $qstat->{ $id }{ owner }     = $1 }
+                elsif ( /server = (.*)/i )                  { $qstat->{ $id }{ server }    = $1 }
+                elsif ( /job_state = (Q|R|C|E)/i )          {  $qstat->{ $id }{ state }    = $1 } 
+                elsif ( /queue = (.*)/i )                   {  $qstat->{ $id }{ queue }    = $1 } 
+                elsif ( /resource_list.nodes = (.*)/i )     {  $qstat->{ $id }{ nodes }    = $1 } 
+                elsif ( /resource_list.walltime = (.*)/i )  {  $qstat->{ $id }{ walltime } = $1 } 
+                elsif ( /resources_used.walltime = (.*)/i ) {  $qstat->{ $id }{ elapsed }  = $1 } 
+                elsif ( /init_work_dir = (.*)/i ) { 
                     $qstat->{ $id }{ init } = $1;  
 
                     # for broken line
@@ -142,14 +141,15 @@ sub _build_qstat ( $self ) {
 
                     last 
                 }  
-                : next  
             }
 
-            $qstat->{ $id }{ bootstrap } = 
-                $self->_set_bootstrap( $qstat->{ $id }->@{ qw( owner init ) } ); 
+            $qstat->{ $id }{ bootstrap } = $self->_set_bootstrap( 
+                $qstat->{ $id }->@{qw( owner init )} 
+            ); 
 
-            $qstat->{ $id }{ bookmark } = 
-                $self->_set_bookmark( $qstat->{ $id }->@{ qw(owner init ) } ); 
+            $qstat->{ $id }{ bookmark } = $self->_set_bookmark( 
+                $qstat->{ $id }->@{qw(owner init )} 
+            ); 
         }
     }
         

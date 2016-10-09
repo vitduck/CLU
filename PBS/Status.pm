@@ -7,6 +7,12 @@ use namespace::autoclean;
 use feature qw( state switch );  
 use experimental qw( signatures smartmatch );  
 
+requires 'get_owner'; 
+requires 'get_state'; 
+requires 'get_elapsed'; 
+requires 'get_init'; 
+requires 'get_bookmark'; 
+
 sub print_header ( $self, $job ) { 
     printf "\n%s\n", $self->color_header( $job ); 
 }
