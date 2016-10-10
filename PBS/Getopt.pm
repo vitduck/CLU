@@ -59,7 +59,6 @@ sub getopt_usage_config ( $self ) {
         headings => 1
 }
 
-
 __PACKAGE__->meta->make_immutable;
 
 1

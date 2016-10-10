@@ -34,9 +34,9 @@ has 'qstat', (
     init_arg => undef,  
     builder  => '_build_qstat', 
     handles  => { 
-        isa_job    => 'exists',  
-        get_jobs   => 'keys', 
-        get_qstatf => 'kv', 
+        isa_job      => 'exists',  
+        get_pbs_jobs => 'keys', 
+        get_qstatf   => 'kv', 
     }
 ); 
 
@@ -76,7 +76,7 @@ sub _build_qstat ( $self ) {
                     $qstat->{ $id }{ init } .= $broken_line; 
 
                     # elapsed time can be undef if job has not started !  
-                    $qstat->{ $id }{ elapsed } //= '---'; 
+                    $qstat->{ $id }{ elapsed } //= '--:--:--'; 
 
                     last 
                 }  

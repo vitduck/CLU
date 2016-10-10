@@ -66,7 +66,7 @@ sub _build_job_list ( $self ) {
             split /,/, $self->get_job       # turn string to list 
         }
         : do { 
-            my @jobs = sort { $a <=> $b } $self->get_jobs; 
+            my @jobs = sort { $a <=> $b } $self->get_pbs_jobs; 
             
             # return all job if --all is set
             $self->all
@@ -113,7 +113,6 @@ sub _build_bookmark ( $self ) {
 
     return \%bookmark
 } 
-
 
 __PACKAGE__->meta->make_immutable;
 

@@ -7,6 +7,8 @@ use namespace::autoclean;
 use feature qw( state switch );  
 use experimental qw( signatures smartmatch );  
 
+with qw( PBS::Format ); 
+
 requires qw( print_qstat print_bookmark ); 
 
 sub print_status ( $self, $job, $format = 'default' ) { 
@@ -24,6 +26,8 @@ sub print_status_default ( $self, $job ) {
 
 sub print_status_oneline ( $self, $job ) { 
     state $count = 0;  
+    my $owner_format   = $self->get_print_format( 'owner' ); 
+    my $elapsed_format = $self->get_print_format( 'elapsed' ); 
 
     my $dir =   
         $self->has_bookmark( $job )
@@ -31,11 +35,11 @@ sub print_status_oneline ( $self, $job ) {
         : $self->get_init( $job )     =~ s/.+?${ \$self->get_owner( $job ) }/~/r; 
 
     printf  
-        "%02d. %s (%s) %-7s %s\n", 
+        "%02d. %-${owner_format} %s %${elapsed_format} %s\n", 
         ++$count, 
+        $self->get_owner( $job ), 
         $self->color_header( $job ), 
         $self->get_elapsed( $job ), 
-        $self->get_owner( $job ), 
         $dir  
 } 
 
