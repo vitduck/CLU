@@ -7,15 +7,7 @@ use namespace::autoclean;
 use feature qw( state switch );  
 use experimental qw( signatures smartmatch );  
 
-requires 'get_owner'; 
-requires 'get_state'; 
-requires 'get_elapsed'; 
-requires 'get_init'; 
-requires 'get_bookmark'; 
-
-sub print_header ( $self, $job ) { 
-    printf "\n%s\n", $self->color_header( $job ); 
-}
+requires qw( print_qstat print_bookmark ); 
 
 sub print_status ( $self, $job, $format = 'default' ) { 
     given ( $format ) {  
@@ -23,6 +15,12 @@ sub print_status ( $self, $job, $format = 'default' ) {
         default            { $self->print_status_default( $job ) }
     }
 }
+
+sub print_status_default ( $self, $job ) { 
+    $self->print_header( $job ); 
+    $self->print_qstat( $job );  
+    $self->print_bookmark( $job )
+} 
 
 sub print_status_oneline ( $self, $job ) { 
     state $count = 0;  
@@ -41,10 +39,10 @@ sub print_status_oneline ( $self, $job ) {
         $dir  
 } 
 
-sub print_status_default ( $self, $job ) { 
-    $self->print_header( $job ); 
-    $self->print_qstat( $job ) 
-} 
+
+sub print_header ( $self, $job ) { 
+    printf "\n%s\n", $self->color_header( $job ); 
+}
 
 sub color_header ( $self, $job ) { 
     given ( $self->get_state( $job ) ) {  

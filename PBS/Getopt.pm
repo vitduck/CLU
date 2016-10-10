@@ -49,11 +49,16 @@ has 'all', (
     documentation => "Apply operation to all users"
 ); 
 
+sub help ( $self, $exit ) { 
+    $self->getopt_usage( exit => $exit ); 
+} 
+
 sub getopt_usage_config ( $self ) {
     return 
         format   => "Usage: %c <status|delete|reset> [OPTIONS]", 
         headings => 1
 }
+
 
 __PACKAGE__->meta->make_immutable;
 

@@ -7,11 +7,12 @@ use File::Find;
 use namespace::autoclean; 
 use experimental qw( signatures );   
 
-extends 'PBS::Getopt'; 
+extends qw( PBS::Getopt );  
 
-with 'PBS::Prompt';  
-with 'PBS::Job'; 
-with 'PBS::Status'; 
+with qw( PBS::Prompt );  
+with qw( PBS::Qstat PBS::Qdel ); 
+with qw( PBS::Bookmark PBS::Bootstrap ); 
+with qw( PBS::Status );  
 
 has 'job_list', ( 
     is        => 'ro', 
@@ -35,23 +36,23 @@ sub status ( $self ) {
     }
 } 
 
-sub delete_job ( $self ) { 
+sub delete ( $self ) { 
     for my $job ( $self->get_job_list ) {  
         $self->print_status( $job );   
 
         if ( $self->yes or $self->prompt( 'delete', $job ) ) { 
-            $self->delete( $job ); 
-            $self->clean( $job )
+            $self->qdel( $job ); 
+            $self->delete_bootstrap( $job )
         }
     } 
 } 
 
-sub reset_job ( $self ) { 
+sub reset ( $self ) { 
     for my $job ( $self->get_job_list ) {  
         $self->print_status( $job );   
 
         if ( $self->yes or $self->prompt( 'reset', $job ) ) { 
-            $self->reset( $job )
+            $self->delete_bookmark( $job )
         } 
     } 
 } 
@@ -74,6 +75,45 @@ sub _build_job_list ( $self ) {
         }
     ]
 } 
+
+sub _build_bootstrap ( $self ) { 
+    my %bootstrap = (); 
+    
+    for my $job ( $self->get_job_list ) { 
+        $bootstrap{ $job } = (
+            $self->get_owner( $job ) eq $ENV{USER}
+            ? ( grep { -d and /bootstrap-\d+/ } glob "${ \$self->get_init( $job ) }/*" )[0]
+            : undef
+        )
+    }
+
+    return \%bootstrap
+} 
+
+sub _build_bookmark ( $self ) { 
+    my %bookmark = (); 
+
+    for my $job ( $self->get_job_list ) { 
+        $bookmark{ $job } = ( 
+            $self->get_owner( $job ) eq $ENV{USER}
+            ? do { 
+                my %mod_time = ();   
+
+                find { 
+                    wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
+                    follow => $self->follow_symbolic 
+                }, $self->get_init( $job );  
+
+                # trim OUTCAR from the full path
+                ( sort { $mod_time{ $a } <=> $mod_time{ $b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
+            } 
+            : undef
+        )
+    }
+
+    return \%bookmark
+} 
+
 
 __PACKAGE__->meta->make_immutable;
 
