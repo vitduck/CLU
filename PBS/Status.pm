@@ -4,6 +4,7 @@ use Moose::Role;
 use MooseX::Types::Moose qw( HashRef ); 
 use Term::ANSIColor; 
 use namespace::autoclean; 
+
 use feature qw( state switch );  
 use experimental qw( signatures smartmatch );  
 
@@ -35,14 +36,13 @@ sub print_status_oneline ( $self, $job ) {
         : $self->get_init( $job )     =~ s/.+?${ \$self->get_owner( $job ) }/~/r; 
 
     printf  
-        "%02d. %-${owner_format} %s %${elapsed_format} %s\n", 
+        "%02d. %s %-${owner_format} %${elapsed_format} %s\n", 
         ++$count, 
-        $self->get_owner( $job ), 
         $self->color_header( $job ), 
+        $self->get_owner( $job ), 
         $self->get_elapsed( $job ), 
         $dir  
 } 
-
 
 sub print_header ( $self, $job ) { 
     printf "\n%s\n", $self->color_header( $job ); 

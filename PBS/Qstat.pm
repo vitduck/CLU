@@ -4,25 +4,22 @@ use Moose::Role;
 use MooseX::Types::Moose qw( Undef Str HashRef );  
 use IO::Pipe; 
 use namespace::autoclean; 
+
 use feature qw( switch );  
 use experimental qw( signatures smartmatch );  
 
-my @pbs_status = qw( owner name state queue nodes walltime elapsed init ); 
+my @pbs_attributes = qw( owner name state queue nodes walltime elapsed init ); 
 
 # automatically install pbs attributes
-for my $attr ( @pbs_status ) {
-    has $attr, ( 
+for my $name ( @pbs_attributes ) {
+    has $name, ( 
         is        => 'ro', 
         isa       => HashRef[ Str | Undef ],  
         traits    => [ 'Hash' ], 
         lazy      => 1, 
         init_arg  => undef, 
-        default   => sub ( $self ) { 
-            return { map { $_->[0] => $_->[1]{$attr} } $self->get_qstatf } 
-        }, 
-        handles   => { 
-            'get_'.$attr => 'get' 
-        } 
+        default   => sub ( $self ) { $self->_build_attribute( $name ) }, 
+        handles   => { 'get_'.$name => 'get' } 
     ); 
 }
 
@@ -33,15 +30,11 @@ has 'qstat', (
     lazy     => 1, 
     init_arg => undef,  
     builder  => '_build_qstat', 
-    handles  => { 
-        isa_job      => 'exists',  
-        get_pbs_jobs => 'keys', 
-        get_qstatf   => 'kv', 
-    }
+    handles  => { isa_job => 'exists' } 
 ); 
 
 sub print_qstat ( $self, $job ) { 
-    for my $attr ( @pbs_status ) { 
+    for my $attr ( @pbs_attributes ) { 
         my $reader = 'get_'.$attr;  
         
         printf "%-9s=> %s\n", ucfirst( $attr ), $self->$reader( $job );  
@@ -88,5 +81,15 @@ sub _build_qstat ( $self ) {
 
     return $qstat; 
 }
+
+sub _build_attribute ( $self, $attr_name ) { 
+    my %attr = (); 
+
+    while ( my ( $id, $qstat ) = each $self->qstat->%* ) { 
+        $attr{ $id } = $qstat->{ $attr_name }     
+    } 
+    
+    return \%attr
+} 
 
 1

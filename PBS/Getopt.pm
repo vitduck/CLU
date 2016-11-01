@@ -3,6 +3,7 @@ package PBS::Getopt;
 use Moose; 
 use MooseX::Types::Moose qw( Bool Str ); 
 use namespace::autoclean; 
+
 use experimental qw( signatures ); 
 
 with 'MooseX::Getopt::Usage'; 
@@ -14,14 +15,6 @@ has 'user', (
     reader    => 'get_user', 
     default   => $ENV{ USER },   
     documentation => "Owner of jobs"
-); 
-
-has 'job', ( 
-    is        => 'ro', 
-    isa       => Str, 
-    predicate => 'has_job', 
-    reader    => 'get_job', 
-    documentation => "Comma separated list of jobs"
 ); 
 
 has 'format', ( 
@@ -45,6 +38,7 @@ has 'all', (
     is        => 'rw', 
     isa       => Bool, 
     lazy      => 1, 
+    reader    => 'all_job',
     default   => 0,  
     documentation => "Apply operation to all users"
 ); 

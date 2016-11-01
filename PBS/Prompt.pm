@@ -2,6 +2,7 @@ package PBS::Prompt;
 
 use Moose::Role;  
 use namespace::autoclean; 
+
 use experimental qw( signatures ); 
 
 sub prompt ( $self, $method, $job ) { 

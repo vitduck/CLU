@@ -4,6 +4,7 @@ use Moose::Role;
 use MooseX::Types::Moose qw( HashRef Str ); 
 use List::Util qw( max ); 
 use namespace::autoclean; 
+
 use experimental qw( signatures );  
 
 has 'print_format', ( 

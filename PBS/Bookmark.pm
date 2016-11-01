@@ -4,9 +4,12 @@ use Moose::Role;
 use MooseX::Types::Moose qw( Undef Str Bool HashRef ); 
 use File::Find; 
 use namespace::autoclean; 
+
 use experimental qw( signatures ); 
 
-requires qw( _build_bookmark ); 
+requires 'get_init';  
+requires 'get_owner'; 
+requires 'get_jobs'; 
 
 has 'follow_symbolic', ( 
     is        => 'ro', 
@@ -41,6 +44,30 @@ sub print_bookmark ( $self, $job ) {
 
 sub delete_bookmark ( $self, $job ) { 
     unlink join '/', $self->get_bookmark( $job), 'OUTCAR' if $self->has_bookmark( $job )
+} 
+
+sub _build_bookmark ( $self ) { 
+    my %bookmark = (); 
+
+    for my $job ( $self->get_jobs ) { 
+        $bookmark{ $job } = ( 
+            $self->get_owner( $job ) eq $ENV{USER}
+            ? do { 
+                my %mod_time = ();   
+
+                find { 
+                    wanted => sub { $mod_time{$File::Find::name} = -M if /OUTCAR/ }, 
+                    follow => $self->follow_symbolic 
+                }, $self->get_init( $job );  
+
+                # trim OUTCAR from the full path
+                ( sort { $mod_time{ $a } <=> $mod_time{ $b} } keys %mod_time )[0] =~ s/\/OUTCAR//r; 
+            } 
+            : undef
+        )
+    }
+
+    return \%bookmark
 } 
 
 1 
