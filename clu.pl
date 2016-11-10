@@ -10,10 +10,9 @@ use PBS::CLU;
 
 my $pbs = PBS::CLU->new_with_options; 
 
-my ( $mode, @jobs ) = $pbs->extra_argv->@*; 
+my ( $mode, @jobs ) = $pbs->argv;  
 
-# set job 
-$pbs->set_job( \@jobs ) if @jobs; 
+$pbs->initialize( @jobs ); 
 
 given ( $mode // 'default' ) { 
     when ( /status/ ) { $pbs->status } 

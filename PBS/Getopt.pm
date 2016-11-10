@@ -43,6 +43,14 @@ has 'all', (
     documentation => "Apply operation to all users"
 ); 
 
+# from MooseX::Getopt
+has '+extra_argv', ( 
+    traits   => [ qw( Array ) ], 
+    handles  => { 
+        argv => 'elements'   
+    }
+); 
+
 sub help ( $self, $exit ) { 
     $self->getopt_usage( exit => $exit ); 
 } 
