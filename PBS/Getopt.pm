@@ -6,7 +6,7 @@ use namespace::autoclean;
 
 use experimental qw( signatures ); 
 
-with 'MooseX::Getopt::Usage'; 
+with qw( MooseX::Getopt::Usage ); 
 
 has 'user', ( 
     is        => 'ro', 

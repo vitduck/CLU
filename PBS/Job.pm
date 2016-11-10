@@ -6,11 +6,6 @@ use namespace::autoclean;
 
 use experimental qw( signatures );  
 
-requires 'isa_job'; 
-requires 'get_owner'; 
-requires 'get_user'; 
-requires 'all_job'; 
-
 has 'job', ( 
     is        => 'rw', 
     isa       => ArrayRef,  

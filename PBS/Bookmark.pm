@@ -7,10 +7,6 @@ use namespace::autoclean;
 
 use experimental qw( signatures ); 
 
-requires 'get_init';  
-requires 'get_owner'; 
-requires 'get_jobs'; 
-
 has 'follow_symbolic', ( 
     is        => 'ro', 
     isa       => Bool, 

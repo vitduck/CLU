@@ -7,15 +7,12 @@ use namespace::autoclean;
 
 use experimental qw( signatures );   
 
-extends 'PBS::Getopt'; 
+extends qw( PBS::Getopt );  
 
-with 'PBS::Prompt'; 
-with 'PBS::Qstat'; 
-with 'PBS::Qdel'; 
-with 'PBS::Job'; 
-with 'PBS::Bookmark'; 
-with 'PBS::Bootstrap'; 
-with 'PBS::Status'; 
+with qw( PBS::Prompt PBS::Qstat PBS::Qdel ); 
+with qw( PBS::Job ); 
+with qw( PBS::Bookmark PBS::Bootstrap ); 
+with qw( PBS::Status ); 
 
 sub BUILD ( $self, @ ) { 
     $self->qstat; 

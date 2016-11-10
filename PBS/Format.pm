@@ -21,7 +21,7 @@ has 'print_format', (
 
 sub _build_print_format ( $self ) { 
     my %format = ( 
-        owner   => join( '', $self->_max_attr_length( 'owner' ), 's' ), 
+        owner   => join( '', $self->_max_attr_length( 'owner'   ), 's' ), 
         elapsed => join( '', $self->_max_attr_length( 'elapsed' ), 's' ), 
     ); 
 

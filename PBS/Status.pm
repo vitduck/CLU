@@ -10,8 +10,6 @@ use experimental qw( signatures smartmatch );
 
 with qw( PBS::Format ); 
 
-requires qw( print_qstat print_bookmark ); 
-
 sub print_status ( $self, $job, $format = 'default' ) { 
     given ( $format ) {  
         when ( 'oneline' ) { $self->print_status_oneline( $job ) }
@@ -27,7 +25,7 @@ sub print_status_default ( $self, $job ) {
 
 sub print_status_oneline ( $self, $job ) { 
     state $count = 0;  
-    my $owner_format   = $self->get_print_format( 'owner' ); 
+    my $owner_format   = $self->get_print_format( 'owner'   ); 
     my $elapsed_format = $self->get_print_format( 'elapsed' ); 
 
     my $dir =   
@@ -36,11 +34,11 @@ sub print_status_oneline ( $self, $job ) {
         : $self->get_init( $job )     =~ s/.+?${ \$self->get_owner( $job ) }/~/r; 
 
     printf  
-        "%02d. %s %-${owner_format} %${elapsed_format} %s\n", 
+        "%02d. %s %-${owner_format} %-${elapsed_format}  %s\n", 
         ++$count, 
         $self->color_header( $job ), 
-        $self->get_owner( $job ), 
-        $self->get_elapsed( $job ), 
+        $self->get_owner   ( $job ), 
+        $self->get_elapsed ( $job ), 
         $dir  
 } 
 
