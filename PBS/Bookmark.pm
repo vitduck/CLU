@@ -47,7 +47,8 @@ sub _build_bookmark ( $self ) {
 
     for my $job ( $self->get_jobs ) { 
         $bookmark{ $job } = ( 
-            $self->get_owner( $job ) eq $ENV{USER}
+            $self->get_owner( $job ) eq $ENV{USER} &&
+            $self->get_state( $job ) eq 'R'
             ? do { 
                 my %mod_time = ();   
 
