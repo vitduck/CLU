@@ -1,11 +1,12 @@
 package PBS::Qstat; 
 
+use IO::Pipe; 
+
 use Moose::Role;  
 use MooseX::Types::Moose qw( Undef Str HashRef );  
-use IO::Pipe; 
 use namespace::autoclean; 
 
-use feature qw( switch );  
+use feature 'switch'; 
 use experimental qw( signatures smartmatch );  
 
 my @pbs_attributes = qw( owner name state queue nodes walltime elapsed init ); 
@@ -55,7 +56,7 @@ sub _build_qstat ( $self ) {
                 if    ( /job_name = (.*)/i )                { $qstat->{ $id }{ name }     = $1 } 
                 elsif ( /job_owner = (.*)@/i )              { $qstat->{ $id }{ owner }    = $1 }
                 elsif ( /server = (.*)/i )                  { $qstat->{ $id }{ server }   = $1 }
-                elsif ( /job_state = (Q|R|C|E)/i )          { $qstat->{ $id }{ state }    = $1 } 
+                elsif ( /job_state = (\w)/i )               { $qstat->{ $id }{ state }    = $1 } 
                 elsif ( /queue = (.*)/i )                   { $qstat->{ $id }{ queue }    = $1 } 
                 elsif ( /resource_list.nodes = (.*)/i )     { $qstat->{ $id }{ nodes }    = $1 } 
                 elsif ( /resource_list.walltime = (.*)/i )  { $qstat->{ $id }{ walltime } = $1 } 

@@ -1,18 +1,22 @@
 package PBS::CLU;
 
-use Moose; 
 use File::Find; 
-use PBS::Types qw( ID ); 
+
+use Moose; 
+use PBS::Types 'ID'; 
 use namespace::autoclean; 
 
-use experimental qw( signatures );   
+use experimental 'signatures';  
 
-extends qw( PBS::Getopt );  
+extends 'PBS::Getopt';  
 
-with qw( PBS::Prompt PBS::Qstat PBS::Qdel ); 
-with qw( PBS::Job ); 
-with qw( PBS::Bookmark PBS::Bootstrap ); 
-with qw( PBS::Status ); 
+with 'PBS::Prompt'; 
+with 'PBS::Qstat';  
+with 'PBS::Qdel'; 
+with 'PBS::Job';  
+with 'PBS::Bookmark';  
+with 'PBS::Bootstrap'; 
+with 'PBS::Status'; 
 
 sub BUILD ( $self, @ ) { 
     $self->qstat; 
