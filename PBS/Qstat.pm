@@ -1,15 +1,14 @@
 package PBS::Qstat; 
 
+use Moose::Role;  
+use MooseX::Types::Moose qw/Undef Str HashRef/;  
 use IO::Pipe; 
 
-use Moose::Role;  
-use MooseX::Types::Moose qw( Undef Str HashRef );  
 use namespace::autoclean; 
+use feature qw/switch/; 
+use experimental qw/signatures smartmatch/;  
 
-use feature 'switch'; 
-use experimental qw( signatures smartmatch );  
-
-my @pbs_attributes = qw( owner name state queue nodes walltime elapsed init ); 
+my @pbs_attributes = qw/owner name state queue nodes walltime elapsed init/;  
 
 # automatically install pbs attributes
 for my $name ( @pbs_attributes ) {

@@ -1,10 +1,10 @@
 package PBS::Job; 
 
 use Moose::Role;  
-use MooseX::Types::Moose 'ArrayRef';
-use namespace::autoclean; 
+use MooseX::Types::Moose qw/ArrayRef/;
 
-use experimental 'signatures'; 
+use namespace::autoclean; 
+use experimental qw/signatures/; 
 
 has 'job', ( 
     is        => 'rw', 

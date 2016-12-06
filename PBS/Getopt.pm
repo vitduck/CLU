@@ -1,12 +1,12 @@
 package PBS::Getopt; 
 
 use Moose; 
-use MooseX::Types::Moose qw( Bool Str ); 
+use MooseX::Types::Moose qw/Bool Str/; 
+
 use namespace::autoclean; 
+use experimental qw/signatures/; 
 
-use experimental 'signatures'; 
-
-with 'MooseX::Getopt::Usage'; 
+with qw/MooseX::Getopt::Usage/;  
 
 has 'user', ( 
     is        => 'ro', 

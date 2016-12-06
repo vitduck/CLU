@@ -1,15 +1,14 @@
 package PBS::Status; 
 
+use Moose::Role;  
+use MooseX::Types::Moose qw/HashRef/; 
 use Term::ANSIColor; 
 
-use Moose::Role;  
-use MooseX::Types::Moose 'HashRef'; 
 use namespace::autoclean; 
+use feature qw/state switch/;  
+use experimental qw/signatures smartmatch/;  
 
-use feature qw( state switch );  
-use experimental qw( signatures smartmatch );  
-
-with 'PBS::Format'; 
+with qw/PBS::Format/; 
 
 sub print_status ( $self, $job, $format = 'default' ) { 
     given ( $format ) {  

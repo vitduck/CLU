@@ -1,12 +1,11 @@
 package PBS::Format; 
 
-use List::Util 'max'; 
-
 use Moose::Role;  
-use MooseX::Types::Moose qw( HashRef Str ); 
-use namespace::autoclean; 
+use MooseX::Types::Moose qw/HashRef Str/; 
+use List::Util qw/max/; 
 
-use experimental 'signatures'; 
+use namespace::autoclean; 
+use experimental qw/signatures/; 
 
 has 'print_format', ( 
     is        => 'ro', 

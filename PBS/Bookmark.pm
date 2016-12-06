@@ -1,12 +1,11 @@
 package PBS::Bookmark; 
 
+use Moose::Role;  
+use MooseX::Types::Moose qw/Undef Str Bool HashRef/; 
 use File::Find; 
 
-use Moose::Role;  
-use MooseX::Types::Moose qw( Undef Str Bool HashRef ); 
 use namespace::autoclean; 
-
-use experimental 'signatures'; 
+use experimental qw/signatures/; 
 
 has 'follow_symbolic', ( 
     is        => 'ro', 
