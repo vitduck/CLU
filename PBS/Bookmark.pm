@@ -5,7 +5,7 @@ use MooseX::Types::Moose qw/Undef Str Bool HashRef/;
 use File::Find; 
 
 use namespace::autoclean; 
-use experimental qw/signatures/; 
+use experimental 'signatures'; 
 
 has 'follow_symbolic', ( 
     is        => 'ro', 

@@ -5,7 +5,7 @@ use MooseX::Types::Moose qw/Undef Str HashRef/;
 use IO::Pipe; 
 
 use namespace::autoclean; 
-use feature qw/switch/; 
+use feature 'switch'; 
 use experimental qw/signatures smartmatch/;  
 
 my @pbs_attributes = qw/owner name state queue nodes walltime elapsed init/;  
@@ -52,27 +52,16 @@ sub _build_qstat ( $self ) {
 
             # basic PBS status 
             while ( local $_ = <$pipe> ) {    
-                if    ( /job_name = (.*)/i )                { $qstat->{ $id }{ name }     = $1 } 
-                elsif ( /job_owner = (.*)@/i )              { $qstat->{ $id }{ owner }    = $1 }
-                elsif ( /server = (.*)/i )                  { $qstat->{ $id }{ server }   = $1 }
-                elsif ( /job_state = (\w)/i )               { $qstat->{ $id }{ state }    = $1 } 
-                elsif ( /queue = (.*)/i )                   { $qstat->{ $id }{ queue }    = $1 } 
-                elsif ( /resource_list.nodes = (.*)/i )     { $qstat->{ $id }{ nodes }    = $1 } 
-                elsif ( /resource_list.walltime = (.*)/i )  { $qstat->{ $id }{ walltime } = $1 } 
+                if    ( /job_name = (.*)/i                ) { $qstat->{ $id }{ name }     = $1 } 
+                elsif ( /job_owner = (.*)@/i              ) { $qstat->{ $id }{ owner }    = $1 }
+                elsif ( /server = (.*)/i                  ) { $qstat->{ $id }{ server }   = $1 }
+                elsif ( /job_state = (\w)/i               ) { $qstat->{ $id }{ state }    = $1 } 
+                elsif ( /queue = (.*)/i                   ) { $qstat->{ $id }{ queue }    = $1 } 
+                elsif ( /resource_list.nodes = (.*)/i     ) { $qstat->{ $id }{ nodes }    = $1 } 
+                elsif ( /resource_list.walltime = (.*)/i  ) { $qstat->{ $id }{ walltime } = $1 } 
                 elsif ( /resources_used.walltime = (.*)/i ) { $qstat->{ $id }{ elapsed }  = $1 } 
-                elsif ( /init_work_dir = (.*)/i ) { 
-                    $qstat->{ $id }{ init } = $1;  
-
-                    # for broken line
-                    chomp ( my $broken_line = <$pipe> );  
-                    $broken_line =~ s/^\s+//; 
-                    $qstat->{ $id }{ init } .= $broken_line; 
-
-                    # elapsed time can be undef if job has not started !  
-                    $qstat->{ $id }{ elapsed } //= '--:--:--'; 
-
-                    last 
-                }  
+                elsif ( /PBS_O_WORKDIR=(.+?),/            ) { $qstat->{ $id }{ init }     = $1 }  
+                elsif ( /^\s+$/                           ) { last                             } 
             }
         }
     }

@@ -2,10 +2,10 @@ package PBS::Bootstrap;
 
 use Moose::Role;  
 use MooseX::Types::Moose qw/Undef Str HashRef/; 
-use File::Path qw/rmtree/;  
+use File::Path 'rmtree';  
 
 use namespace::autoclean; 
-use experimental qw/signatures/; 
+use experimental 'signatures'; 
 
 has 'bootstrap', ( 
     is        => 'ro', 

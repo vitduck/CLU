@@ -2,10 +2,10 @@ package PBS::Format;
 
 use Moose::Role;  
 use MooseX::Types::Moose qw/HashRef Str/; 
-use List::Util qw/max/; 
+use List::Util 'max'; 
 
 use namespace::autoclean; 
-use experimental qw/signatures/; 
+use experimental 'signatures'; 
 
 has 'print_format', ( 
     is        => 'ro', 

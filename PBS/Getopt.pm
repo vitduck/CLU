@@ -4,9 +4,9 @@ use Moose;
 use MooseX::Types::Moose qw/Bool Str/; 
 
 use namespace::autoclean; 
-use experimental qw/signatures/; 
+use experimental 'signatures'; 
 
-with qw/MooseX::Getopt::Usage/;  
+with 'MooseX::Getopt::Usage';  
 
 has 'user', ( 
     is        => 'ro', 
@@ -45,7 +45,7 @@ has 'all', (
 
 # from MooseX::Getopt
 has '+extra_argv', ( 
-    traits   => [ qw( Array ) ], 
+    traits   => [ 'Array' ], 
     handles  => { 
         argv => 'elements'   
     }
