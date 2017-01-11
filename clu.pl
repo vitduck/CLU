@@ -5,7 +5,7 @@ use warnings;
 use feature qw( switch );  
 use experimental qw( smartmatch );  
 
-use Data::Printer; 
+use Data::Printer output => 'stdout';  
 use PBS::CLU;  
 
 my $pbs = PBS::CLU->new_with_options; 

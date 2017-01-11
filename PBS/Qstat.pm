@@ -3,6 +3,7 @@ package PBS::Qstat;
 use Moose::Role;  
 use MooseX::Types::Moose qw/Undef Str HashRef/;  
 use IO::Pipe; 
+use String::Util 'trim';  
 
 use namespace::autoclean; 
 use feature 'switch'; 
@@ -52,16 +53,39 @@ sub _build_qstat ( $self ) {
 
             # basic PBS status 
             while ( local $_ = <$pipe> ) {    
-                if    ( /job_name = (.*)/i                ) { $qstat->{ $id }{ name }     = $1 } 
-                elsif ( /job_owner = (.*)@/i              ) { $qstat->{ $id }{ owner }    = $1 }
-                elsif ( /server = (.*)/i                  ) { $qstat->{ $id }{ server }   = $1 }
-                elsif ( /job_state = (\w)/i               ) { $qstat->{ $id }{ state }    = $1 } 
-                elsif ( /queue = (.*)/i                   ) { $qstat->{ $id }{ queue }    = $1 } 
-                elsif ( /resource_list.nodes = (.*)/i     ) { $qstat->{ $id }{ nodes }    = $1 } 
-                elsif ( /resource_list.walltime = (.*)/i  ) { $qstat->{ $id }{ walltime } = $1 } 
-                elsif ( /resources_used.walltime = (.*)/i ) { $qstat->{ $id }{ elapsed }  = $1 } 
-                elsif ( /PBS_O_WORKDIR=(.+?),/            ) { $qstat->{ $id }{ init }     = $1 }  
-                elsif ( /^\s+$/                           ) { last                             } 
+                if    ( /submit_host/                      ) { last                             } 
+                elsif ( /job_name = (.*)/i                 ) { $qstat->{ $id }{ name }     = $1 } 
+                elsif ( /job_owner = (.*)@/i               ) { $qstat->{ $id }{ owner }    = $1 }
+                elsif ( /server = (.*)/i                   ) { $qstat->{ $id }{ server }   = $1 }
+                elsif ( /job_state = (\w)/i                ) { $qstat->{ $id }{ state }    = $1 } 
+                elsif ( /queue = (.*)/i                    ) { $qstat->{ $id }{ queue }    = $1 } 
+                elsif ( /resource_list.nodes = (.*)/i      ) { $qstat->{ $id }{ nodes }    = $1 } 
+                elsif ( /resource_list.walltime = (.*)/i   ) { $qstat->{ $id }{ walltime } = $1 } 
+                elsif ( /resources_used.walltime = (.*)/i  ) { $qstat->{ $id }{ elapsed }  = $1 } 
+                elsif ( /output_path = .+?:(.*)/i          ) { 
+                    $qstat->{ $id }{ init } = $1; 
+
+                    while ( my $broken = <$pipe> ) { 
+                        # termination if encountering either 
+                        # Priority tag 
+                        # blank line
+                        last if $broken =~ /Priority/; 
+                        last if $broken =~ /^\s+$/; 
+
+                        # remove leading and trailing white spaces 
+                        $broken = trim( $broken ); 
+
+                        # join broken line to { init }
+                        $qstat->{ $id }{ init } .= $broken; 
+                    }
+                    
+                    # remove the standard output from path 
+                    $qstat->{ $id }{ init } =~ s/(.*)\/.+?$/$1/; 
+                    $qstat->{ $id }{ init } =~ s/\/\.$//; 
+
+                    # elapsed time can be undef if job has not started !  
+                    $qstat->{ $id }{ elapsed } //= '--:--:--'; 
+                }
             }
         }
     }

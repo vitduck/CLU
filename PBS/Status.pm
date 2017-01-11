@@ -27,7 +27,6 @@ sub print_status_oneline ( $self, $job ) {
     state $count = 0;  
     my $name_format    = $self->get_print_format( 'name'    ); 
     my $owner_format   = $self->get_print_format( 'owner'   ); 
-    # my $node_format    = $self->get_print_format( 'nodes'   ); 
     my $elapsed_format = $self->get_print_format( 'elapsed' ); 
 
     my $dir =   
