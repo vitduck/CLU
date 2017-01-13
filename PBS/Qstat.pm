@@ -53,6 +53,7 @@ sub _build_qstat ( $self ) {
 
             # basic PBS status 
             while ( local $_ = <$pipe> ) {    
+                # break at submit_host tag
                 if    ( /submit_host/                      ) { last                             } 
                 elsif ( /job_name = (.*)/i                 ) { $qstat->{ $id }{ name }     = $1 } 
                 elsif ( /job_owner = (.*)@/i               ) { $qstat->{ $id }{ owner }    = $1 }

@@ -18,28 +18,37 @@ sub print_status ( $self, $job, $format = 'default' ) {
 }
 
 sub print_status_default ( $self, $job ) { 
-    $self->print_header( $job ); 
-    $self->print_qstat( $job );  
+    $self->print_header  ( $job ); 
+    $self->print_qstat   ( $job );  
     $self->print_bookmark( $job )
 } 
 
 sub print_status_oneline ( $self, $job ) { 
     state $count = 0;  
+
     my $name_format    = $self->get_print_format( 'name'    ); 
     my $owner_format   = $self->get_print_format( 'owner'   ); 
+    my $node_format    = $self->get_print_format( 'nodes'   ); 
     my $elapsed_format = $self->get_print_format( 'elapsed' ); 
 
     my $dir =   
         $self->has_bookmark( $job )
         ? $self->get_bookmark( $job ) =~ s/.+?${ \$self->get_owner( $job ) }/~/r
-        : $self->get_init( $job )     =~ s/.+?${ \$self->get_owner( $job ) }/~/r; 
+        : $self->get_init    ( $job ) =~ s/.+?${ \$self->get_owner( $job ) }/~/r; 
+
+    # for deeply nested directory  
+    my $max_level = 7; 
+    my @dirs = split /\//, $dir; 
+    
+    $dir = join( '/', '..', @dirs[ $#dirs-$max_level .. $#dirs ] ) if @dirs > $max_level; 
 
     printf  
-        "%02d. %s %-${name_format} %-${owner_format} %-${elapsed_format} %s\n", 
+        "%02d. %s %-${name_format} %-${owner_format} %-${node_format} %-${elapsed_format} %s\n", 
         ++$count, 
         $self->color_header( $job ), 
         $self->get_name    ( $job ), 
         $self->get_owner   ( $job ), 
+        $self->get_nodes   ( $job ), 
         $self->get_elapsed ( $job ), 
         $dir  
 } 

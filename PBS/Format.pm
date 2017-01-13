@@ -31,13 +31,14 @@ sub _build_print_format ( $self ) {
 } 
 
 sub _max_attr_length ( $self, $attr ) { 
+    # add extrac space
     return ( 
         $self->all_job 
-            ? max( 
+            ? 1 + max( 
             map length( $_->{$attr} ), 
             values $self->qstat->%* 
             ) 
-            : max ( 
+            : 1 + max ( 
                 map length( $_->{$attr} ), 
                 grep $_->{ owner } eq $self->get_user, 
                 values $self->qstat->%* 
