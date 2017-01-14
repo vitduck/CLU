@@ -18,7 +18,7 @@ has 'user', (
 ); 
 
 has 'format', ( 
-    is        => 'rw', 
+    is        => 'ro', 
     isa       => Str, 
     lazy      => 1, 
     reader    => 'get_format', 
@@ -27,7 +27,7 @@ has 'format', (
 ); 
 
 has 'yes', ( 
-    is        => 'rw', 
+    is        => 'ro', 
     isa       => Bool, 
     lazy      => 1, 
     default   => 0, 
@@ -35,12 +35,21 @@ has 'yes', (
 ); 
 
 has 'all', ( 
-    is        => 'rw', 
+    is        => 'ro', 
     isa       => Bool, 
     lazy      => 1, 
-    reader    => 'all_job',
+    predicate => 'has_all',
     default   => 0,  
     documentation => "Apply operation to all users"
+); 
+
+has 'debug', ( 
+    is        => 'ro', 
+    isa       => Bool, 
+    lazy      => 1, 
+    predicate => 'has_debug',  
+    default   => 0, 
+    documentation => "Debug mode"
 ); 
 
 # from MooseX::Getopt

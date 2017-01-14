@@ -7,7 +7,7 @@ use namespace::autoclean;
 use experimental 'signatures'; 
 
 has 'job', ( 
-    is        => 'rw', 
+    is        => 'ro', 
     isa       => ArrayRef,  
     traits    => [ 'Array' ], 
     init_arg  => undef,  
@@ -27,7 +27,7 @@ sub initialize ( $self, @jobs ) {
     } else { 
         my @jobs = sort { $a <=> $b } keys $self->qstat->%*; 
         $self->add_job( 
-            $self->all_job
+            $self->has_all
             ? @jobs          
             : grep $self->get_owner( $_) eq $self->get_user, @jobs 
         ); 
